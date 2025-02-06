@@ -348,85 +348,6 @@
                     removeEndpoint(endpoint);
                 });
 
-                if (!response.ok) {
-                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-                }
-
-                const reader = response.body.getReader();
-                let botReply = '';
-                const botMessage = appendMessage(false, '');
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = new TextDecoder().decode(value);
-                    const lines = chunk.split('\n');
-                    
-                    for (const line of lines) {
-                        if (line.trim() === '' || line.includes('[DONE]')) continue;
-                        
-                        try {
-                            const json = JSON.parse(line.replace(/^data: /, ''));
-                            const token = json.choices[0]?.delta?.content || '';
-                            
-                            if (token) {
-                                botReply += token;
-                                botMessage.textContent = botReply;
-                                document.getElementById('chat-messages').scrollTop = 
-                                    document.getElementById('chat-messages').scrollHeight;
-                            }
-                        } catch (e) {
-                            console.error('Error parsing streaming response:', e, 'Line:', line);
-                        }
-                    }
-                }
-
-                if (botReply.trim()) {
-                    chatHistory.push({ role: 'assistant', content: botReply });
-                    if (chatHistory.length > 100) {
-                        chatHistory = chatHistory.slice(-100);
-                    }
-                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                }
-
-            } catch (error) {
-                console.error('Error in sendMessage:', error);
-                appendMessage(false, `Error: ${error.message}. Please try again.`);
-            } finally {
-                inputField.disabled = false;
-                sendButton.disabled = false;
-                sendButton.classList.remove('loading');
-                inputField.value = '';
-                inputField.focus();
-            }
-        }
-
-        // Event Handlers
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
-
-        function handleTemperatureChange(e) {
-            document.getElementById('temperature-value').textContent = e.target.value;
-        }
-
-        // Helper Functions
-        function updateModelSelects() {
-            const selects = document.querySelectorAll('.model-select');
-            selects.forEach(select => {
-                select.innerHTML = availableModels
-                    .map(model => `<option value="${model.id}">${model.id}</option>`)
-                    .join('');
-            });
-        }
-    </script>
-</body>
-</html>
-
                 chip.appendChild(endpointSpan);
                 chip.appendChild(deleteSpan);
                 container.appendChild(chip);
@@ -556,3 +477,83 @@
                         max_tokens: parseInt(document.getElementById('max-tokens').value),
                         stream: true
                     })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                }
+
+                const reader = response.body.getReader();
+                let botReply = '';
+                const botMessage = appendMessage(false, '');
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = new TextDecoder().decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.trim() === '' || line.includes('[DONE]')) continue;
+                        
+                        try {
+                            const json = JSON.parse(line.replace(/^data: /, ''));
+                            const token = json.choices[0]?.delta?.content || '';
+                            
+                            if (token) {
+                                botReply += token;
+                                botMessage.textContent = botReply;
+                                document.getElementById('chat-messages').scrollTop = 
+                                    document.getElementById('chat-messages').scrollHeight;
+                            }
+                        } catch (e) {
+                            console.error('Error parsing streaming response:', e, 'Line:', line);
+                        }
+                    }
+                }
+
+                if (botReply.trim()) {
+                    chatHistory.push({ role: 'assistant', content: botReply });
+                    if (chatHistory.length > 100) {
+                        chatHistory = chatHistory.slice(-100);
+                    }
+                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+                }
+
+            } catch (error) {
+                console.error('Error in sendMessage:', error);
+                appendMessage(false, `Error: ${error.message}. Please try again.`);
+            } finally {
+                inputField.disabled = false;
+                sendButton.disabled = false;
+                sendButton.classList.remove('loading');
+                inputField.value = '';
+                inputField.focus();
+            }
+        }
+
+        // Event Handlers
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function handleTemperatureChange(e) {
+            document.getElementById('temperature-value').textContent = e.target.value;
+        }
+
+        // Helper Functions
+        function updateModelSelects() {
+            const selects = document.querySelectorAll('.model-select');
+            selects.forEach(select => {
+                select.innerHTML = availableModels
+                    .map(model => `<option value="${model.id}">${model.id}</option>`)
+                    .join('');
+            });
+        }
+    </script>
+</body>
+</html>
