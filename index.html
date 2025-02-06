@@ -143,7 +143,6 @@
             background: #fff;
         }
 
-/* Message styles */
         .message {
             max-width: 80%;
             margin: 8px;
@@ -211,15 +210,6 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
-        /* Error Message */
-        .error-message {
-            color: #dc3545;
-            background: #f8d7da;
-            padding: 10px;
-            border-radius: 4px;
-            margin: 10px 0;
-        }
     </style>
 </head>
 <body>
@@ -229,7 +219,7 @@
             <h3>API Endpoint</h3>
             <div class="endpoint-input">
                 <input type="text" id="endpoint-input" placeholder="Enter API endpoint">
-                <button onclick="addEndpoint()">Add</button>
+                <button id="add-endpoint-btn">Add</button>
             </div>
             <div class="connection-status">
                 <div class="status-indicator" id="status-indicator"></div>
@@ -262,16 +252,16 @@
     <div class="chat-container">
         <div class="chat-header">
             <h2>Chatbot</h2>
-            <button onclick="clearChat()">Clear Chat</button>
+            <button id="clear-chat-btn">Clear Chat</button>
         </div>
         <div class="chat-messages" id="chat-messages"></div>
         <div class="input-area">
-            <input type="text" id="user-input" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
-            <button onclick="sendMessage()" id="send-button">Send</button>
+            <input type="text" id="user-input" placeholder="Type your message...">
+            <button id="send-btn">Send</button>
         </div>
     </div>
 
-<script>
+    <script>
         // Global variables
         let currentEndpoint = localStorage.getItem('currentEndpoint') || 'http://localhost:1234';
         let savedEndpoints = JSON.parse(localStorage.getItem('savedEndpoints') || '[]');
@@ -290,15 +280,21 @@
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize values
             document.getElementById('endpoint-input').value = currentEndpoint;
             document.getElementById('system-prompt').value = DEFAULT_SYSTEM_PROMPT;
+
+            // Add event listeners
+            document.getElementById('add-endpoint-btn').addEventListener('click', addEndpoint);
+            document.getElementById('clear-chat-btn').addEventListener('click', clearChat);
+            document.getElementById('send-btn').addEventListener('click', sendMessage);
+            document.getElementById('user-input').addEventListener('keypress', handleKeyPress);
+            document.getElementById('temperature').addEventListener('input', handleTemperatureChange);
+
+            // Initialize chat
             updateEndpointsList();
             loadChatHistory();
             checkConnection();
-
-            // Initialize temperature display
-            document.getElementById('temperature-value').textContent = 
-                document.getElementById('temperature').value;
         });
 
         // Endpoint Management
@@ -340,10 +336,99 @@
             savedEndpoints.forEach(endpoint => {
                 const chip = document.createElement('div');
                 chip.className = 'endpoint-chip' + (endpoint === currentEndpoint ? ' active' : '');
-                chip.innerHTML = `
-                    <span onclick="selectEndpoint('${endpoint}')">${endpoint}</span>
-                    <span onclick="removeEndpoint('${endpoint}')" style="cursor:pointer;">✕</span>
-                `;
+                const endpointSpan = document.createElement('span');
+                endpointSpan.textContent = endpoint;
+                endpointSpan.addEventListener('click', () => selectEndpoint(endpoint));
+
+                const deleteSpan = document.createElement('span');
+                deleteSpan.textContent = '✕';
+                deleteSpan.style.cursor = 'pointer';
+                deleteSpan.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeEndpoint(endpoint);
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                }
+
+                const reader = response.body.getReader();
+                let botReply = '';
+                const botMessage = appendMessage(false, '');
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = new TextDecoder().decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.trim() === '' || line.includes('[DONE]')) continue;
+                        
+                        try {
+                            const json = JSON.parse(line.replace(/^data: /, ''));
+                            const token = json.choices[0]?.delta?.content || '';
+                            
+                            if (token) {
+                                botReply += token;
+                                botMessage.textContent = botReply;
+                                document.getElementById('chat-messages').scrollTop = 
+                                    document.getElementById('chat-messages').scrollHeight;
+                            }
+                        } catch (e) {
+                            console.error('Error parsing streaming response:', e, 'Line:', line);
+                        }
+                    }
+                }
+
+                if (botReply.trim()) {
+                    chatHistory.push({ role: 'assistant', content: botReply });
+                    if (chatHistory.length > 100) {
+                        chatHistory = chatHistory.slice(-100);
+                    }
+                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+                }
+
+            } catch (error) {
+                console.error('Error in sendMessage:', error);
+                appendMessage(false, `Error: ${error.message}. Please try again.`);
+            } finally {
+                inputField.disabled = false;
+                sendButton.disabled = false;
+                sendButton.classList.remove('loading');
+                inputField.value = '';
+                inputField.focus();
+            }
+        }
+
+        // Event Handlers
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function handleTemperatureChange(e) {
+            document.getElementById('temperature-value').textContent = e.target.value;
+        }
+
+        // Helper Functions
+        function updateModelSelects() {
+            const selects = document.querySelectorAll('.model-select');
+            selects.forEach(select => {
+                select.innerHTML = availableModels
+                    .map(model => `<option value="${model.id}">${model.id}</option>`)
+                    .join('');
+            });
+        }
+    </script>
+</body>
+</html>
+
+                chip.appendChild(endpointSpan);
+                chip.appendChild(deleteSpan);
                 container.appendChild(chip);
             });
         }
@@ -437,7 +522,7 @@
             }
 
             const inputField = document.getElementById('user-input');
-            const sendButton = document.getElementById('send-button');
+            const sendButton = document.getElementById('send-btn');
             const userText = inputField.value.trim();
 
             if (!userText) return;
@@ -471,84 +556,3 @@
                         max_tokens: parseInt(document.getElementById('max-tokens').value),
                         stream: true
                     })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-                }
-
-                const reader = response.body.getReader();
-                let botReply = '';
-                const botMessage = appendMessage(false, '');
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = new TextDecoder().decode(value);
-                    const lines = chunk.split('\n');
-                    
-                    for (const line of lines) {
-                        if (line.trim() === '' || line.includes('[DONE]')) continue;
-                        
-                        try {
-                            const json = JSON.parse(line.replace(/^data: /, ''));
-                            const token = json.choices[0]?.delta?.content || '';
-                            
-                            if (token) {
-                                botReply += token;
-                                botMessage.textContent = botReply;
-                                document.getElementById('chat-messages').scrollTop = 
-                                    document.getElementById('chat-messages').scrollHeight;
-                            }
-                        } catch (e) {
-                            console.error('Error parsing streaming response:', e, 'Line:', line);
-                        }
-                    }
-                }
-
-                if (botReply.trim()) {
-                    chatHistory.push({ role: 'assistant', content: botReply });
-                    if (chatHistory.length > 100) {
-                        chatHistory = chatHistory.slice(-100);
-                    }
-                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                }
-
-            } catch (error) {
-                console.error('Error in sendMessage:', error);
-                appendMessage(false, `Error: ${error.message}. Please try again.`);
-            } finally {
-                inputField.disabled = false;
-                sendButton.disabled = false;
-                sendButton.classList.remove('loading');
-                inputField.value = '';
-                inputField.focus();
-            }
-        }
-
-        // Event Handlers
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
-
-        // Update temperature display
-        document.getElementById('temperature').addEventListener('input', (e) => {
-            document.getElementById('temperature-value').textContent = e.target.value;
-        });
-
-        // Helper Functions
-        function updateModelSelects() {
-            const selects = document.querySelectorAll('.model-select');
-            selects.forEach(select => {
-                select.innerHTML = availableModels
-                    .map(model => `<option value="${model.id}">${model.id}</option>`)
-                    .join('');
-            });
-        }
-    </script>
-</body>
-</html>
