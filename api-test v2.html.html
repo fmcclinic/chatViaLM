@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced LM Studio API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .url-config {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .url-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .url-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .saved-urls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .url-chip {
+            background: #007bff;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .url-chip:hover {
+            background: #0056b3;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+        }
+        .success {
+            color: #28a745;
+            background: #d4edda;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            margin: 10px 0;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        .status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status.online {
+            background: #28a745;
+        }
+        .status.offline {
+            background: #dc3545;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        .timestamp {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Enhanced LM Studio API Test</h1>
+        
+        <!-- URL Configuration -->
+        <div class="url-config">
+            <h3>API Endpoint Configuration</h3>
+            <div class="url-input">
+                <input type="text" id="base-url" placeholder="Enter API endpoint (e.g., http://localhost:1234 or ngrok URL)">
+                <button onclick="addEndpoint()">Save Endpoint</button>
+            </div>
+            <div class="saved-urls" id="saved-urls">
+                <!-- Saved URLs will be displayed here -->
+            </div>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="test-section">
+            <div class="test-header">
+                <h2>Connection Status</h2>
+                <div>
+                    <span class="status" id="connection-status"></span>
+                    <span id="status-text">Checking...</span>
+                </div>
+            </div>
+            <button onclick="checkConnection()">Check Connection</button>
+            <div id="connection-result" class="result"></div>
+        </div>
+        
+        <!-- Models API Test -->
+        <div class="test-section">
+            <div class="test-header">
+                <h2>1. Models API Test</h2>
+                <div class="controls">
+                    <button onclick="testModels()">Get Available Models</button>
+                </div>
+            </div>
+            <div id="models-result" class="result"></div>
+        </div>
+
+        <!-- Chat Completions API Test -->
+        <div class="test-section">
+            <div class="test-header">
+                <h2>2. Chat Completions API Test</h2>
+                <div class="controls">
+                    <select id="chat-model">
+                        <!-- Models will be populated here -->
+                    </select>
+                    <button onclick="testChatCompletions()">Send Message</button>
+                </div>
+            </div>
+            <textarea id="chat-prompt" placeholder="Enter your message here">Xin chào</textarea>
+            <div id="chat-result" class="result"></div>
+        </div>
+
+        <!-- Completions API Test -->
+        <div class="test-section">
+            <div class="test-header">
+                <h2>3. Completions API Test</h2>
+                <div class="controls">
+                    <select id="completion-model">
+                        <!-- Models will be populated here -->
+                    </select>
+                    <button onclick="testCompletions()">Get Completion</button>
+                </div>
+            </div>
+            <textarea id="completion-prompt" placeholder="Enter your prompt here">Hãy nói về Hà Nội</textarea>
+            <div id="completion-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentBaseUrl = localStorage.getItem('currentBaseUrl') || 'http://localhost:1234';
+        let savedUrls = JSON.parse(localStorage.getItem('savedUrls') || '[]');
+        let availableModels = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('base-url').value = currentBaseUrl;
+            updateSavedUrls();
+            checkConnection();
+        });
+
+        // URL Management
+        function addEndpoint() {
+            const url = document.getElementById('base-url').value.trim();
+            if (!url) return;
+
+            if (!savedUrls.includes(url)) {
+                savedUrls.push(url);
+                localStorage.setItem('savedUrls', JSON.stringify(savedUrls));
+            }
+            
+            currentBaseUrl = url;
+            localStorage.setItem('currentBaseUrl', url);
+            updateSavedUrls();
+            checkConnection();
+        }
+
+        function updateSavedUrls() {
+            const container = document.getElementById('saved-urls');
+            container.innerHTML = '';
+            
+            savedUrls.forEach(url => {
+                const chip = document.createElement('div');
+                chip.className = 'url-chip';
+                chip.innerHTML = `
+                    ${url}
+                    <span onclick="removeUrl('${url}')" style="cursor:pointer;">✕</span>
+                `;
+                chip.onclick = (e) => {
+                    if (e.target !== chip) return; // Ignore if clicked on the delete button
+                    selectUrl(url);
+                };
+                container.appendChild(chip);
+            });
+        }
+
+        function removeUrl(url) {
+            savedUrls = savedUrls.filter(u => u !== url);
+            localStorage.setItem('savedUrls', JSON.stringify(savedUrls));
+            updateSavedUrls();
+        }
+
+        function selectUrl(url) {
+            currentBaseUrl = url;
+            document.getElementById('base-url').value = url;
+            localStorage.setItem('currentBaseUrl', url);
+            checkConnection();
+        }
+
+        // Helper Functions
+        function displayResult(elementId, data, error = false) {
+            const element = document.getElementById(elementId);
+            element.className = 'result' + (error ? ' error' : ' success');
+            
+            const timestamp = new Date().toLocaleString();
+            const content = typeof data === 'object' ? JSON.stringify(data, null, 2) : data.toString();
+            
+            element.innerHTML = `${content}\n\n<div class="timestamp">Tested at: ${timestamp}</div>`;
+        }
+
+        function updateConnectionStatus(online) {
+            const status = document.getElementById('connection-status');
+            const text = document.getElementById('status-text');
+            
+            status.className = 'status ' + (online ? 'online' : 'offline');
+            text.textContent = online ? 'Connected' : 'Disconnected';
+        }
+
+        function updateModelSelects() {
+            const selects = ['chat-model', 'completion-model'];
+            selects.forEach(id => {
+                const select = document.getElementById(id);
+                select.innerHTML = availableModels
+                    .map(model => `<option value="${model.id}">${model.id}</option>`)
+                    .join('');
+            });
+        }
+
+        // API Tests
+        async function checkConnection() {
+            try {
+                const response = await fetch(`${currentBaseUrl}/v1/models`);
+                const data = await response.json();
+                updateConnectionStatus(true);
+                displayResult('connection-result', 'Connection successful to ' + currentBaseUrl);
+                
+                // Update available models
+                availableModels = data.data || [];
+                updateModelSelects();
+            } catch (error) {
+                updateConnectionStatus(false);
+                displayResult('connection-result', `Connection failed: ${error.message}`, true);
+            }
+        }
+
+        async function testModels() {
+            try {
+                const response = await fetch(`${currentBaseUrl}/v1/models`);
+                const data = await response.json();
+                displayResult('models-result', data);
+                
+                // Update available models
+                availableModels = data.data || [];
+                updateModelSelects();
+            } catch (error) {
+                displayResult('models-result', error, true);
+            }
+        }
+
+        async function testChatCompletions() {
+            try {
+                const prompt = document.getElementById('chat-prompt').value;
+                const model = document.getElementById('chat-model').value;
+                
+                const response = await fetch(`${currentBaseUrl}/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            { role: 'user', content: prompt }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 200
+                    })
+                });
+                const data = await response.json();
+                displayResult('chat-result', data);
+            } catch (error) {
+                displayResult('chat-result', error, true);
+            }
+        }
+
+        async function testCompletions() {
+            try {
+                const prompt = document.getElementById('completion-prompt').value;
+                const model = document.getElementById('completion-model').value;
+                
+                const response = await fetch(`${currentBaseUrl}/v1/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        prompt: prompt,
+                        temperature: 0.7,
+                        max_tokens: 200
+                    })
+                });
+                const data = await response.json();
+                displayResult('completion-result', data);
+            } catch (error) {
+                displayResult('completion-result', error, true);
+            }
+        }
+    </script>
+</body>
+</html>

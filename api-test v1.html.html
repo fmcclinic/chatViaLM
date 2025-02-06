@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LM Studio API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .result {
+            background: #f5f5f5;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 3px;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .error {
+            color: red;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>LM Studio API Test</h1>
+    
+    <!-- Test Models API -->
+    <div class="test-section">
+        <h2>1. Test Models API</h2>
+        <button onclick="testModels()">Get Available Models</button>
+        <div id="models-result" class="result"></div>
+    </div>
+
+    <!-- Test Chat Completions API -->
+    <div class="test-section">
+        <h2>2. Test Chat Completions API</h2>
+        <div>
+            <textarea id="chat-prompt" placeholder="Enter your message here">Xin chào</textarea>
+            <button onclick="testChatCompletions()">Send Chat Message</button>
+        </div>
+        <div id="chat-result" class="result"></div>
+    </div>
+
+    <!-- Test Completions API -->
+    <div class="test-section">
+        <h2>3. Test Completions API</h2>
+        <div>
+            <textarea id="completion-prompt" placeholder="Enter your prompt here">Hãy nói về Hà Nội</textarea>
+            <button onclick="testCompletions()">Get Completion</button>
+        </div>
+        <div id="completion-result" class="result"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:1234';
+
+        // Helper function to display results
+        function displayResult(elementId, data, error = false) {
+            const element = document.getElementById(elementId);
+            element.className = 'result' + (error ? ' error' : '');
+            element.textContent = typeof data === 'object' ? 
+                JSON.stringify(data, null, 2) : data.toString();
+        }
+
+        // Test Models API
+        async function testModels() {
+            try {
+                const response = await fetch(`${BASE_URL}/v1/models`);
+                const data = await response.json();
+                displayResult('models-result', data);
+            } catch (error) {
+                displayResult('models-result', error, true);
+            }
+        }
+
+        // Test Chat Completions API
+        async function testChatCompletions() {
+            try {
+                const prompt = document.getElementById('chat-prompt').value;
+                const response = await fetch(`${BASE_URL}/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'vistral-7b-chat',
+                        messages: [
+                            { role: 'user', content: prompt }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 200
+                    })
+                });
+                const data = await response.json();
+                displayResult('chat-result', data);
+            } catch (error) {
+                displayResult('chat-result', error, true);
+            }
+        }
+
+        // Test Completions API
+        async function testCompletions() {
+            try {
+                const prompt = document.getElementById('completion-prompt').value;
+                const response = await fetch(`${BASE_URL}/v1/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'vistral-7b-chat',
+                        prompt: prompt,
+                        temperature: 0.7,
+                        max_tokens: 200
+                    })
+                });
+                const data = await response.json();
+                displayResult('completion-result', data);
+            } catch (error) {
+                displayResult('completion-result', error, true);
+            }
+        }
+    </script>
+</body>
+</html>
