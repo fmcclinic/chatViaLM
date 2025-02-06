@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Chatbot LM Studio</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+        }
+
+        .endpoint-config {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .endpoint-input {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .endpoint-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .saved-endpoints {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .endpoint-chip {
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .endpoint-chip:hover {
+            background: #dee2e6;
+        }
+
+        .endpoint-chip.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .settings-group {
+            margin-bottom: 20px;
+        }
+
+        .settings-group h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .setting-item {
+            margin-bottom: 10px;
+        }
+
+        .setting-item label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .setting-item input[type="range"],
+        .setting-item input[type="number"],
+        .setting-item select,
+        .setting-item textarea {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* Connection Status */
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-online {
+            background: #28a745;
+        }
+
+        .status-offline {
+            background: #dc3545;
+        }
+
+        /* Chat Area */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .chat-header {
+            padding: 15px;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+/* Message styles */
+        .message {
+            max-width: 80%;
+            margin: 8px;
+            padding: 12px;
+            border-radius: 8px;
+            animation: fadeIn 0.3s;
+            line-height: 1.5;
+            font-size: 16px;
+            white-space: pre-wrap;
+        }
+
+        .user {
+            background: #007bff;
+            color: white;
+            align-self: flex-end;
+        }
+
+        .bot {
+            background: #f1f1f1;
+            align-self: flex-start;
+            font-family: Arial, sans-serif;
+            word-wrap: break-word;
+            word-break: normal;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: #fff;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 8px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            opacity: 0.7;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Error Message */
+        .error-message {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Settings Panel -->
+    <div class="settings-panel">
+        <div class="endpoint-config">
+            <h3>API Endpoint</h3>
+            <div class="endpoint-input">
+                <input type="text" id="endpoint-input" placeholder="Enter API endpoint">
+                <button onclick="addEndpoint()">Add</button>
+            </div>
+            <div class="connection-status">
+                <div class="status-indicator" id="status-indicator"></div>
+                <span id="status-text">Checking connection...</span>
+            </div>
+            <div class="saved-endpoints" id="saved-endpoints">
+                <!-- Saved endpoints will be displayed here -->
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <h3>Chat Settings</h3>
+            <div class="setting-item">
+                <label>Temperature</label>
+                <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7">
+                <span id="temperature-value">0.7</span>
+            </div>
+            <div class="setting-item">
+                <label>Max Tokens</label>
+                <input type="number" id="max-tokens" value="200" min="1" max="2000">
+            </div>
+            <div class="setting-item">
+                <label>System Prompt</label>
+                <textarea id="system-prompt" rows="4"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Container -->
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Chatbot</h2>
+            <button onclick="clearChat()">Clear Chat</button>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()" id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Constants
+        const DEFAULT_SYSTEM_PROMPT = `Bạn là một trợ lý AI thông minh và hữu ích. Hãy tuân theo những quy tắc sau:
+1. Trả lời ngắn gọn, súc tích và chính xác
+2. Chỉ trả lời những gì người dùng hỏi
+3. Không tự thêm thông tin không liên quan
+4. Luôn trả lời bằng tiếng Việt
+5. Nếu không hiểu câu hỏi, hãy yêu cầu làm rõ
+6. Không được tự bịa ra thông tin`;
+
+        // State Management
+        let currentEndpoint = localStorage.getItem('currentEndpoint') || 'http://localhost:1234';
+        let savedEndpoints = JSON.parse(localStorage.getItem('savedEndpoints') || '[]');
+        let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+        let isConnected = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('endpoint-input').value = currentEndpoint;
+            document.getElementById('system-prompt').value = DEFAULT_SYSTEM_PROMPT;
+            updateEndpointsList();
+            loadChatHistory();
+            checkConnection();
+        });
+
+        // Endpoint Management
+        function addEndpoint() {
+            const endpoint = document.getElementById('endpoint-input').value.trim();
+            if (!endpoint) return;
+
+            if (!savedEndpoints.includes(endpoint)) {
+                savedEndpoints.push(endpoint);
+                localStorage.setItem('savedEndpoints', JSON.stringify(savedEndpoints));
+            }
+
+            selectEndpoint(endpoint);
+        }
+
+        function selectEndpoint(endpoint) {
+            currentEndpoint = endpoint;
+            localStorage.setItem('currentEndpoint', endpoint);
+            document.getElementById('endpoint-input').value = endpoint;
+            updateEndpointsList();
+            checkConnection();
+        }
+
+        function removeEndpoint(endpoint) {
+            savedEndpoints = savedEndpoints.filter(e => e !== endpoint);
+            localStorage.setItem('savedEndpoints', JSON.stringify(savedEndpoints));
+            if (currentEndpoint === endpoint) {
+                currentEndpoint = savedEndpoints[0] || 'http://localhost:1234';
+                localStorage.setItem('currentEndpoint', currentEndpoint);
+                document.getElementById('endpoint-input').value = currentEndpoint;
+            }
+            updateEndpointsList();
+        }
+
+        function updateEndpointsList() {
+            const container = document.getElementById('saved-endpoints');
+            container.innerHTML = '';
+
+            savedEndpoints.forEach(endpoint => {
+                const chip = document.createElement('div');
+                chip.className = 'endpoint-chip' + (endpoint === currentEndpoint ? ' active' : '');
+                chip.innerHTML = `
+                    <span onclick="selectEndpoint('${endpoint}')">${endpoint}</span>
+                    <span onclick="removeEndpoint('${endpoint}')" style="cursor:pointer;">✕</span>
+                `;
+                container.appendChild(chip);
+            });
+        }
+
+        // Connection Check
+        async function checkConnection() {
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+
+            try {
+                const response = await fetch(`${currentEndpoint}/v1/models`);
+                const data = await response.json();
+                isConnected = true;
+                indicator.className = 'status-indicator status-online';
+                statusText.textContent = 'Connected';
+            } catch (error) {
+                isConnected = false;
+                indicator.className = 'status-indicator status-offline';
+                statusText.textContent = 'Connection failed';
+                console.error('Connection error:', error);
+            }
+        }
+
+        // Chat Management
+        function loadChatHistory() {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = '';
+            chatHistory.forEach(msg => {
+                appendMessage(msg.role === 'user', msg.content);
+            });
+        }
+
+        function clearChat() {
+            chatHistory = [];
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            document.getElementById('chat-messages').innerHTML = '';
+        }
+
+        function appendMessage(isUser, text) {
+            const container = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            messageDiv.textContent = text;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+            return messageDiv;
+        }
+
+        // Message Handling
+        async function sendMessage() {
+            if (!isConnected) {
+                alert('Please check your connection to the API endpoint.');
+                return;
+            }
+
+            const inputField = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+            const userText = inputField.value.trim();
+
+            if (!userText) return;
+
+            // Disable input while processing
+            inputField.disabled = true;
+            sendButton.disabled = true;
+            sendButton.classList.add('loading');
+
+            // Add user message
+            appendMessage(true, userText);
+            chatHistory.push({ role: 'user', content: userText });
+
+            try {
+                const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'vistral-7b-chat',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: document.getElementById('system-prompt').value
+                            },
+                            ...chatHistory
+                        ],
+                        temperature: parseFloat(document.getElementById('temperature').value),
+                        max_tokens: parseInt(document.getElementById('max-tokens').value),
+                        stream: true
+                    })
+                });
+
+                if (!response.ok) throw new Error('API request failed');
+
+                const reader = response.body.getReader();
+                let botReply = '';
+                const botMessage = appendMessage(false, '');
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = new TextDecoder().decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.trim() === '' || line.includes('[DONE]')) continue;
+                        
+                        try {
+                            const json = JSON.parse(line.replace(/^data: /, ''));
+                            const token = json.choices[0]?.delta?.content || '';
+                            botReply += token;
+                            botMessage.textContent = botReply; // Sử dụng textContent thay vì innerHTML
+                            
+                            document.getElementById('chat-messages').scrollTop = 
+                                document.getElementById('chat-messages').scrollHeight;
+                        } catch (e) {
+                            console.error('Error parsing streaming response:', e);
+                        }
+                    }
+                }
+
+                // Add bot message to history
+                chatHistory.push({ role: 'assistant', content: botReply });
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+
+            } catch (error) {
+                console.error('Error:', error);
+                appendMessage(false, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.');
+            } finally {
+                inputField.disabled = false;
+                sendButton.disabled = false;
+                sendButton.classList.remove('loading');
+                inputField.value = '';
+                inputField.focus();
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // Temperature display update
+        document.getElementById('temperature').addEventListener('input', (e) => {
+            document.getElementById('temperature-value').textContent = e.target.value;
+        });
+
+        // Auto-retry with exponential backoff
+        async function retryWithBackoff(fn, maxRetries = 3) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    return await fn();
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error;
+                    const waitTime = Math.min(1000 * Math.pow(2, i), 10000);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                }
+            }
+        }
+
+        // Rate limiting
+        let lastRequestTime = 0;
+        const MIN_REQUEST_INTERVAL = 1000; // 1 second
+
+        function checkRateLimit() {
+            const now = Date.now();
+            if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
+                throw new Error('Please wait before sending another message');
+            }
+            lastRequestTime = now;
+        }
+    </script>
+</body>
+</html>
