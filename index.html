@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enhanced Chatbot LM Studio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* Base styles */
         body {
             margin: 0;
             height: 100vh;
@@ -35,7 +37,7 @@
             margin-bottom: 10px;
         }
 
-        .endpoint-input input {
+        .endpoint-input input, .setting-item select {
             flex: 1;
             padding: 8px;
             border: 1px solid #ddd;
@@ -120,7 +122,66 @@
             background: #dc3545;
         }
 
-        /* Chat Area */
+        /* Message styles */
+        .message-container {
+            position: relative;
+            max-width: 80%;
+            margin: 8px;
+            animation: fadeIn 0.3s;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            line-height: 1.5;
+            font-size: 16px;
+            white-space: pre-wrap;
+        }
+
+        .message-actions {
+            display: none;
+            position: absolute;
+            right: 10px;
+            top: 5px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 4px;
+            padding: 5px;
+            gap: 5px;
+        }
+
+        .message-container:hover .message-actions {
+            display: flex;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            color: #666;
+            border-radius: 4px;
+        }
+
+        .action-btn:hover {
+            background: rgba(0,0,0,0.1);
+            color: #333;
+        }
+
+        .user-message {
+            margin-left: auto;
+        }
+
+        .user-message .message {
+            background: #007bff;
+            color: white;
+        }
+
+        .bot-message .message {
+            background: #f1f1f1;
+            color: #333;
+        }
+
+        /* Chat Container */
         .chat-container {
             display: flex;
             flex-direction: column;
@@ -143,31 +204,6 @@
             background: #fff;
         }
 
-        .message {
-            max-width: 80%;
-            margin: 8px;
-            padding: 12px;
-            border-radius: 8px;
-            animation: fadeIn 0.3s;
-            line-height: 1.5;
-            font-size: 16px;
-            white-space: pre-wrap;
-        }
-
-        .user {
-            background: #007bff;
-            color: white;
-            align-self: flex-end;
-        }
-
-        .bot {
-            background: #f1f1f1;
-            align-self: flex-start;
-            font-family: Arial, sans-serif;
-            word-wrap: break-word;
-            word-break: normal;
-        }
-
         .input-area {
             padding: 20px;
             background: #fff;
@@ -182,6 +218,44 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 16px;
+        }
+
+        /* Feedback styles */
+        .feedback-buttons {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+
+        .feedback-btn {
+            padding: 2px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .feedback-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        /* Edit mode */
+        .edit-mode textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .edit-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
         }
 
         button {
@@ -213,7 +287,6 @@
     </style>
 </head>
 <body>
-    <!-- Settings Panel -->
     <div class="settings-panel">
         <div class="endpoint-config">
             <h3>API Endpoint</h3>
@@ -225,13 +298,15 @@
                 <div class="status-indicator" id="status-indicator"></div>
                 <span id="status-text">Checking connection...</span>
             </div>
-            <div class="saved-endpoints" id="saved-endpoints">
-                <!-- Saved endpoints will be displayed here -->
-            </div>
+            <div class="saved-endpoints" id="saved-endpoints"></div>
         </div>
 
         <div class="settings-group">
             <h3>Chat Settings</h3>
+            <div class="setting-item">
+                <label>Model</label>
+                <select id="model-select" class="model-select"></select>
+            </div>
             <div class="setting-item">
                 <label>Temperature</label>
                 <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7">
@@ -248,11 +323,12 @@
         </div>
     </div>
 
-    <!-- Chat Container -->
     <div class="chat-container">
         <div class="chat-header">
             <h2>Chatbot</h2>
-            <button id="clear-chat-btn">Clear Chat</button>
+            <div class="header-actions">
+                <button id="clear-chat-btn">Clear Chat</button>
+            </div>
         </div>
         <div class="chat-messages" id="chat-messages"></div>
         <div class="input-area">
@@ -266,10 +342,10 @@
         let currentEndpoint = localStorage.getItem('currentEndpoint') || 'http://localhost:1234';
         let savedEndpoints = JSON.parse(localStorage.getItem('savedEndpoints') || '[]');
         let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
-        let isConnected = false;
         let availableModels = [];
+        let currentModel = localStorage.getItem('currentModel') || 'vistral-7b-chat';
+        let isConnected = false;
 
-        // Constants
         const DEFAULT_SYSTEM_PROMPT = `Bạn là một trợ lý AI thông minh và hữu ích. Hãy tuân theo những quy tắc sau:
 1. Trả lời ngắn gọn, súc tích và chính xác
 2. Chỉ trả lời những gì người dùng hỏi
@@ -278,20 +354,18 @@
 5. Nếu không hiểu câu hỏi, hãy yêu cầu làm rõ
 6. Không được tự bịa ra thông tin`;
 
-        // Initialize on page load
+        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize values
             document.getElementById('endpoint-input').value = currentEndpoint;
             document.getElementById('system-prompt').value = DEFAULT_SYSTEM_PROMPT;
-
-            // Add event listeners
+            
             document.getElementById('add-endpoint-btn').addEventListener('click', addEndpoint);
             document.getElementById('clear-chat-btn').addEventListener('click', clearChat);
-            document.getElementById('send-btn').addEventListener('click', sendMessage);
+            document.getElementById('send-btn').addEventListener('click', () => sendMessage());
             document.getElementById('user-input').addEventListener('keypress', handleKeyPress);
             document.getElementById('temperature').addEventListener('input', handleTemperatureChange);
+            document.getElementById('model-select').addEventListener('change', handleModelChange);
 
-            // Initialize chat
             updateEndpointsList();
             loadChatHistory();
             checkConnection();
@@ -306,7 +380,6 @@
                 savedEndpoints.push(endpoint);
                 localStorage.setItem('savedEndpoints', JSON.stringify(savedEndpoints));
             }
-
             selectEndpoint(endpoint);
         }
 
@@ -332,10 +405,10 @@
         function updateEndpointsList() {
             const container = document.getElementById('saved-endpoints');
             container.innerHTML = '';
-
             savedEndpoints.forEach(endpoint => {
                 const chip = document.createElement('div');
                 chip.className = 'endpoint-chip' + (endpoint === currentEndpoint ? ' active' : '');
+                
                 const endpointSpan = document.createElement('span');
                 endpointSpan.textContent = endpoint;
                 endpointSpan.addEventListener('click', () => selectEndpoint(endpoint));
@@ -354,14 +427,24 @@
             });
         }
 
+        function updateModelSelects() {
+            const modelSelect = document.getElementById('model-select');
+            modelSelect.innerHTML = availableModels
+                .map(model => `<option value="${model.id}" ${model.id === currentModel ? 'selected' : ''}>${model.id}</option>`)
+                .join('');
+        }
+
+        function handleModelChange(e) {
+            currentModel = e.target.value;
+            localStorage.setItem('currentModel', currentModel);
+        }
+
         // Connection Check
         async function checkConnection() {
             const indicator = document.getElementById('status-indicator');
             const statusText = document.getElementById('status-text');
 
             try {
-                console.log("Checking connection to:", currentEndpoint);
-                
                 const response = await fetch(`${currentEndpoint}/v1/models`, {
                     method: 'GET',
                     headers: {
@@ -372,17 +455,11 @@
                     mode: 'cors'
                 });
 
-                console.log("Response status:", response.status);
-                console.log("Response headers:", Object.fromEntries(response.headers.entries()));
-
                 const rawText = await response.text();
-                console.log("Raw response:", rawText);
-
                 let data;
                 try {
                     data = JSON.parse(rawText);
                 } catch (e) {
-                    console.error("JSON parse error:", e);
                     throw new Error(`Invalid JSON response. Raw response: ${rawText.substring(0, 100)}...`);
                 }
 
@@ -398,7 +475,6 @@
                 isConnected = true;
                 indicator.className = 'status-indicator status-online';
                 statusText.textContent = 'Connected';
-
                 return data;
 
             } catch (error) {
@@ -410,12 +486,68 @@
             }
         }
 
-        // Chat Management
+        // Message Management
+        function createMessageElement(isUser, text, messageId) {
+            const container = document.createElement('div');
+            container.className = `message-container ${isUser ? 'user-message' : 'bot-message'}`;
+            container.dataset.messageId = messageId;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.textContent = text;
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'message-actions';
+
+            if (!isUser) {
+                actionsDiv.innerHTML = `
+                    <button class="action-btn regenerate-btn" title="Regenerate response">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                    <button class="action-btn follow-up-btn" title="Ask follow-up">
+                        <i class="fas fa-reply"></i>
+                    </button>
+                    <button class="action-btn edit-btn" title="Edit message">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                `;
+
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = 'feedback-buttons';
+                feedbackDiv.innerHTML = `
+                    <button class="feedback-btn" data-feedback="up" title="Helpful">
+                        <i class="fas fa-thumbs-up"></i>
+                    </button>
+                    <button class="feedback-btn" data-feedback="down" title="Not helpful">
+                        <i class="fas fa-thumbs-down"></i>
+                    </button>
+                `;
+
+                feedbackDiv.querySelectorAll('.feedback-btn').forEach(btn => {
+                    btn.addEventListener('click', () => handleFeedback(messageId, btn.dataset.feedback));
+                });
+
+                container.appendChild(feedbackDiv);
+            }
+
+            container.appendChild(messageDiv);
+            container.appendChild(actionsDiv);
+
+            if (!isUser) {
+                actionsDiv.querySelector('.regenerate-btn').addEventListener('click', () => regenerateResponse(messageId));
+                actionsDiv.querySelector('.follow-up-btn').addEventListener('click', () => askFollowUp(messageId));
+                actionsDiv.querySelector('.edit-btn').addEventListener('click', () => editMessage(container));
+            }
+
+            return container;
+        }
+
         function loadChatHistory() {
             const container = document.getElementById('chat-messages');
             container.innerHTML = '';
             chatHistory.forEach(msg => {
-                appendMessage(msg.role === 'user', msg.content);
+                const messageElement = createMessageElement(msg.role === 'user', msg.content, msg.id);
+                container.appendChild(messageElement);
             });
         }
 
@@ -425,18 +557,73 @@
             document.getElementById('chat-messages').innerHTML = '';
         }
 
-        function appendMessage(isUser, text) {
-            const container = document.getElementById('chat-messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
-            messageDiv.textContent = text;
-            container.appendChild(messageDiv);
-            container.scrollTop = container.scrollHeight;
-            return messageDiv;
+        async function regenerateResponse(messageId) {
+            const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
+            if (messageIndex === -1) return;
+
+            chatHistory = chatHistory.slice(0, messageIndex);
+            await sendMessage(true);
         }
 
-        // Message Handling
-        async function sendMessage() {
+        function askFollowUp(messageId) {
+            const message = chatHistory.find(msg => msg.id === messageId);
+            if (!message) return;
+
+            const input = document.getElementById('user-input');
+            input.value = `Regarding your previous response about "${message.content.substring(0, 50)}...", `;
+            input.focus();
+        }
+
+        function editMessage(container) {
+            const messageDiv = container.querySelector('.message');
+            const originalText = messageDiv.textContent;
+            
+            const editDiv = document.createElement('div');
+            editDiv.className = 'edit-mode';
+            editDiv.innerHTML = `
+                <textarea>${originalText}</textarea>
+                <div class="edit-buttons">
+                    <button class="save-btn">Save</button>
+                    <button class="cancel-btn">Cancel</button>
+                </div>
+            `;
+
+            messageDiv.replaceWith(editDiv);
+
+            editDiv.querySelector('.save-btn').addEventListener('click', () => {
+                const newText = editDiv.querySelector('textarea').value;
+                messageDiv.textContent = newText;
+                editDiv.replaceWith(messageDiv);
+                
+                const messageId = container.dataset.messageId;
+                const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
+                if (messageIndex !== -1) {
+                    chatHistory[messageIndex].content = newText;
+                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+                }
+            });
+
+            editDiv.querySelector('.cancel-btn').addEventListener('click', () => {
+                editDiv.replaceWith(messageDiv);
+            });
+        }
+
+        function handleFeedback(messageId, feedback) {
+            const container = document.querySelector(`[data-message-id="${messageId}"]`);
+            const buttons = container.querySelectorAll('.feedback-btn');
+            
+            buttons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.feedback === feedback);
+            });
+
+            const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
+            if (messageIndex !== -1) {
+                chatHistory[messageIndex].feedback = feedback;
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            }
+        }
+
+        async function sendMessage(isRegenerate = false) {
             if (!isConnected) {
                 alert('Please check your connection to the API endpoint.');
                 return;
@@ -453,8 +640,15 @@
                 sendButton.disabled = true;
                 sendButton.classList.add('loading');
 
-                appendMessage(true, userText);
-                chatHistory.push({ role: 'user', content: userText });
+                const messageId = Date.now().toString();
+                const messageElement = createMessageElement(true, userText, messageId);
+                document.getElementById('chat-messages').appendChild(messageElement);
+
+                chatHistory.push({ 
+                    id: messageId,
+                    role: 'user', 
+                    content: userText 
+                });
 
                 const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
                     method: 'POST',
@@ -465,7 +659,7 @@
                     },
                     mode: 'cors',
                     body: JSON.stringify({
-                        model: 'vistral-7b-chat',
+                        model: currentModel,
                         messages: [
                             {
                                 role: 'system',
@@ -485,7 +679,10 @@
 
                 const reader = response.body.getReader();
                 let botReply = '';
-                const botMessage = appendMessage(false, '');
+                const botMessageId = Date.now().toString();
+                const botMessage = createMessageElement(false, '', botMessageId);
+                document.getElementById('chat-messages').appendChild(botMessage);
+                const botMessageContent = botMessage.querySelector('.message');
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -503,7 +700,7 @@
                             
                             if (token) {
                                 botReply += token;
-                                botMessage.textContent = botReply;
+                                botMessageContent.textContent = botReply;
                                 document.getElementById('chat-messages').scrollTop = 
                                     document.getElementById('chat-messages').scrollHeight;
                             }
@@ -514,7 +711,12 @@
                 }
 
                 if (botReply.trim()) {
-                    chatHistory.push({ role: 'assistant', content: botReply });
+                    chatHistory.push({ 
+                        id: botMessageId,
+                        role: 'assistant', 
+                        content: botReply 
+                    });
+                    
                     if (chatHistory.length > 100) {
                         chatHistory = chatHistory.slice(-100);
                     }
@@ -523,7 +725,8 @@
 
             } catch (error) {
                 console.error('Error in sendMessage:', error);
-                appendMessage(false, `Error: ${error.message}. Please try again.`);
+                const errorMessage = createMessageElement(false, `Error: ${error.message}. Please try again.`, Date.now().toString());
+                document.getElementById('chat-messages').appendChild(errorMessage);
             } finally {
                 inputField.disabled = false;
                 sendButton.disabled = false;
@@ -533,7 +736,6 @@
             }
         }
 
-        // Event Handlers
         function handleKeyPress(event) {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
@@ -543,16 +745,6 @@
 
         function handleTemperatureChange(e) {
             document.getElementById('temperature-value').textContent = e.target.value;
-        }
-
-        // Helper Functions
-        function updateModelSelects() {
-            const selects = document.querySelectorAll('.model-select');
-            selects.forEach(select => {
-                select.innerHTML = availableModels
-                    .map(model => `<option value="${model.id}">${model.id}</option>`)
-                    .join('');
-            });
         }
     </script>
 </body>
