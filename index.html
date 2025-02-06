@@ -344,23 +344,30 @@
         }
 
         // Connection Check
-        async function checkConnection() {
-            const indicator = document.getElementById('status-indicator');
-            const statusText = document.getElementById('status-text');
+	async function checkConnection() {
+    const indicator = document.getElementById('status-indicator');
+    const statusText = document.getElementById('status-text');
 
-            try {
-                const response = await fetch(`${currentEndpoint}/v1/models`);
-                const data = await response.json();
-                isConnected = true;
-                indicator.className = 'status-indicator status-online';
-                statusText.textContent = 'Connected';
-            } catch (error) {
-                isConnected = false;
-                indicator.className = 'status-indicator status-offline';
-                statusText.textContent = 'Connection failed';
-                console.error('Connection error:', error);
-            }
+    try {
+        const response = await fetch(`${currentEndpoint}/v1/models`);
+        // Kiểm tra content-type
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new Error("API endpoint không trả về JSON");
         }
+        const data = await response.json();
+        isConnected = true;
+        indicator.className = 'status-indicator status-online';
+        statusText.textContent = 'Connected';
+        return data;
+    } catch (error) {
+        isConnected = false;
+        indicator.className = 'status-indicator status-offline';
+        statusText.textContent = `Connection failed: ${error.message}`;
+        console.error('Connection error:', error);
+        throw error;
+    }
+}
 
         // Chat Management
         function loadChatHistory() {
