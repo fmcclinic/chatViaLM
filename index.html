@@ -345,42 +345,89 @@
 
         // Connection Check
 async function checkConnection() {
-    const indicator = document.getElementById('status-indicator');
-    const statusText = document.getElementById('status-text');
+   const indicator = document.getElementById('status-indicator');
+   const statusText = document.getElementById('status-text');
 
-    try {
-        console.log("Checking connection to:", currentEndpoint);
-        const response = await fetch(`${currentEndpoint}/v1/models`);
-        
-        // Log response details
-        console.log("Response status:", response.status);
-        console.log("Response headers:", response.headers);
-        
-        // Get the raw text first
-        const rawText = await response.text();
-        console.log("Raw response:", rawText);
-        
-        // Try parsing as JSON
-        let data;
-        try {
-            data = JSON.parse(rawText);
-        } catch (e) {
-            throw new Error(`Invalid JSON response. Raw response: ${rawText.substring(0, 100)}...`);
-        }
+   try {
+       // Log attempt to connect
+       console.log("Checking connection to:", currentEndpoint);
 
-        isConnected = true;
-        indicator.className = 'status-indicator status-online';
-        statusText.textContent = 'Connected';
-        return data;
-    } catch (error) {
-        isConnected = false;
-        indicator.className = 'status-indicator status-offline';
-        statusText.textContent = `Connection failed: ${error.message}`;
-        console.error('Connection error:', error);
-        throw error;
-    }
+       // Send request with Ngrok bypass header
+       const response = await fetch(`${currentEndpoint}/v1/models`, {
+           method: 'GET',
+           headers: {
+               'Accept': 'application/json',
+               'Content-Type': 'application/json',
+               'ngrok-skip-browser-warning': 'true'
+           },
+           mode: 'cors'
+       });
+
+       // Log response details for debugging
+       console.log("Response status:", response.status);
+       console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+
+       // Get response text first
+       const rawText = await response.text();
+       console.log("Raw response:", rawText);
+
+       // Try parsing the response
+       let data;
+       try {
+           data = JSON.parse(rawText);
+       } catch (e) {
+           console.error("JSON parse error:", e);
+           throw new Error(`Invalid JSON response. Raw response: ${rawText.substring(0, 100)}...`);
+       }
+
+       // Validate the response format
+       if (!data || !data.data) {
+           throw new Error('Invalid API response format');
+       }
+
+       // Update available models if present
+       if (Array.isArray(data.data)) {
+           availableModels = data.data;
+           updateModelSelects();
+       }
+
+       // Update connection status to success
+       isConnected = true;
+       indicator.className = 'status-indicator status-online';
+       statusText.textContent = 'Connected';
+
+       // Save endpoint if connection successful
+       if (!savedEndpoints.includes(currentEndpoint)) {
+           savedEndpoints.push(currentEndpoint);
+           localStorage.setItem('savedEndpoints', JSON.stringify(savedEndpoints));
+           updateEndpointsList();
+       }
+
+       return data;
+
+   } catch (error) {
+       // Update connection status to failed
+       isConnected = false;
+       indicator.className = 'status-indicator status-offline';
+       statusText.textContent = `Connection failed: ${error.message}`;
+       
+       // Log error details
+       console.error('Connection error:', error);
+       
+       // Rethrow the error for upstream handling
+       throw error;
+   }
 }
 
+// Helper function to update model selects
+function updateModelSelects() {
+   const selects = document.querySelectorAll('.model-select');
+   selects.forEach(select => {
+       select.innerHTML = availableModels
+           .map(model => `<option value="${model.id}">${model.id}</option>`)
+           .join('');
+   });
+}
         // Chat Management
         function loadChatHistory() {
             const container = document.getElementById('chat-messages');
@@ -443,6 +490,7 @@ async function sendMessage() {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
+        'ngrok-skip-browser-warning': 'true'  // Thêm header này
             },
             mode: 'cors',
             body: JSON.stringify({
