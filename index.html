@@ -44,30 +44,28 @@
             border-radius: 4px;
         }
 
-        .saved-endpoints {
+        /* Connection Status */
+        .connection-status {
             display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .endpoint-chip {
-            background: #e9ecef;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 0.9em;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
         }
 
-        .endpoint-chip:hover {
-            background: #dee2e6;
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
         }
 
-        .endpoint-chip.active {
-            background: #007bff;
-            color: white;
+        .status-online {
+            background: #28a745;
+        }
+
+        .status-offline {
+            background: #dc3545;
         }
 
         .settings-group {
@@ -98,30 +96,6 @@
             border-radius: 4px;
         }
 
-        /* Connection Status */
-        .connection-status {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-        }
-
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-
-        .status-online {
-            background: #28a745;
-        }
-
-        .status-offline {
-            background: #dc3545;
-        }
-
         /* Message styles */
         .message-container {
             position: relative;
@@ -136,6 +110,25 @@
             line-height: 1.5;
             font-size: 16px;
             white-space: pre-wrap;
+        }
+
+        /* Warning Message Style */
+        .warning-message {
+            font-size: 0.9em;
+            color: #856404;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .warning-message i {
+            color: #856404;
         }
 
         .message-actions {
@@ -291,14 +284,12 @@
         <div class="endpoint-config">
             <h3>API Endpoint</h3>
             <div class="endpoint-input">
-                <input type="text" id="endpoint-input" placeholder="Enter API endpoint">
-                <button id="add-endpoint-btn">Add</button>
+                <input type="text" id="endpoint-input" placeholder="Enter API endpoint" value="http://localhost:1234">
             </div>
             <div class="connection-status">
                 <div class="status-indicator" id="status-indicator"></div>
                 <span id="status-text">Checking connection...</span>
             </div>
-            <div class="saved-endpoints" id="saved-endpoints"></div>
         </div>
 
         <div class="settings-group">
@@ -314,7 +305,7 @@
             </div>
             <div class="setting-item">
                 <label>Max Tokens</label>
-                <input type="number" id="max-tokens" value="200" min="1" max="2000">
+                <input type="number" id="max-tokens" value="500" min="1" max="2000">
             </div>
             <div class="setting-item">
                 <label>System Prompt</label>
@@ -339,124 +330,250 @@
 
     <script>
         // Global variables
-        let currentEndpoint = localStorage.getItem('currentEndpoint') || 'http://localhost:1234';
-        let savedEndpoints = JSON.parse(localStorage.getItem('savedEndpoints') || '[]');
+        let currentEndpoint = 'http://localhost:1234';
         let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
         let availableModels = [];
-        let currentModel = localStorage.getItem('currentModel') || 'vistral-7b-chat';
+        let currentModel = 'vistral-7b-chat';
         let isConnected = false;
 
-        const DEFAULT_SYSTEM_PROMPT = `bạn là chatbot của một phòng khám tên là Friend Medical Clinic. Bạn chỉ giới thiệu về phòng khám
-1. bạn chỉ trả lời các câu hỏi về sức khỏe, y tế.
-2. Từ chối trả lời các chủ đề khác ngoài y tế.
-3. Luôn đề cập triệu chứng, biến chứng, điều trị, phòng ngừa.
-4. Tư vấn đến khám tại : Địa chỉ: A12 Saigon Villas Hill, 99 Lê Văn Việt, Thành phố Thủ Đức, TP.HCM.
+        const DEFAULT_SYSTEM_PROMPT = `Bạn là chatbot của phòng khám chuyên khoa Friend Medical Clinic, chỉ cung cấp thông tin về sức khỏe và dịch vụ y tế của phòng khám, thông tin chỉ tham khảo không thay thế bác sĩ, nhân viên y tế
+Quy tắc hoạt động:
+1. Chỉ trả lời các câu hỏi liên quan đến y tế, sức khỏe.
+2. Từ chối các chủ đề ngoài phạm vi y tế.
+3. không nói đến giá cả xét nghiệm, tên thuốc, hay tiền
+4. Tuyệt đối không đề cập đến chính trị, xã hội, bạo lực, tình dục, mãi dâm …
+Khi tư vấn, luôn đề cập đến triệu chứng, biến chứng, điều trị, phòng ngừa.
+5. Luôn khuyến khích bệnh nhân đến khám trực tiếp tại phòng khám.
+Thông tin phòng khám:
+Địa chỉ: A12 Saigon Villas Hill, 99 Lê Văn Việt, TP. Thủ Đức, TP. HCM.
 Điện thoại: 028 3535 5353
-Giờ làm việc: Thứ 2 - Thứ 7: 8:00 - 20:00; Chủ nhật: 8:00 - 12:00
-5. Danh sách bác sĩ theo chuyên khoa:
+Giờ làm việc:
+Thứ 2 - Thứ 7: 8:00 - 20:00
+Chủ nhật: 8:00 - 12:00
+Chuyên khoa & Đội ngũ bác sĩ
+1. Chuyên Khoa Sản Phụ Khoa
+Phòng khám có đội ngũ bác sĩ giàu kinh nghiệm từ Bệnh viện Từ Dũ – trung tâm sản khoa hàng đầu khu vực phía Nam.
+Các Bác sĩ:
+BS. Nguyễn Hoàng Lam (Chuyên khoa II)
+BS. Đào Hoàng Hoa Hà Hải Âu (Chuyên khoa I)
+BS. Nguyễn Thị Việt Linh (Chuyên khoa I)
+Dịch vụ:
 
-Chuyên Khoa Sản Phụ Khoa:
-- BS. Nguyễn Hoàng Lam (Chuyên khoa 2)
-- BS. Đào Hoàng Hoa Hà Hải Âu (Chuyên khoa I)
-- BS. Nguyễn Thị Việt Linh (Chuyên khoa I)
-6. Không đề cập các chủ đề chính trị, xã hội, bạo lực, tình dục.
 
-Chuyên Khoa Tai Mũi Họng:
-- BS. Đặng Thị Thùy Trang (Chuyên khoa 2)
-- BS. Dương Minh Trọng (Chuyên khoa 1)
-- BS. Sử Ngọc Kiều Chinh (Chuyên khoa 1)
+Điều trị bệnh lý phụ khoa phức tạp: u xơ tử cung, u nang buồng trứng, tầm soát ung thư cổ tử cung.
+Chăm sóc thai sản toàn diện: khám thai định kỳ, sàng lọc trước sinh, hỗ trợ sinh tại Bệnh viện Từ Dũ.
+2. Chuyên Khoa Tai Mũi Họng
+Phòng khám cung cấp dịch vụ chẩn đoán và điều trị các bệnh lý Tai – Mũi – Họng với hệ thống nội soi hiện đại.
+Bác sĩ TMH
+BS. Dương Minh Trọng (Chuyên khoa I)
+BS. Sử Ngọc Kiều Chinh (Chuyên khoa I)
+Dịch vụ:
+Điều trị viêm xoang mãn tính, viêm amidan, viêm mũi dị ứng, chảy máu cam …
+Tầm soát ung thư vòm họng.
+3. Chuyên Khoa Nội
+Đội ngũ chuyên gia từ Bệnh viện FV với các lĩnh vực chuyên sâu.
+Bác sĩ:
+BS. Đỗ Thành Long (Chuyên khoa I)
+BS. Nguyễn Anh Hoàng (Chuyên khoa I)
+Dịch vụ:
+Nội tổng quát: Khám và điều trị bệnh lý thường gặp.
+Tim mạch: Chẩn đoán, điều trị bệnh tim mạch, theo dõi sau đặt stent.
+Nội tiết – Chuyển hóa: Điều trị đái tháo đường, rối loạn tuyến giáp, bệnh chuyển hóa.
+Lưu ý: Phòng khám không có ngoại khoa, nhi khoa, da liễu, nha khoa, nội soi tiêu hóa.
 
-Chuyên Khoa Nội:
-- BS. Đỗ Thành Long (Chuyên khoa 1)
-- BS. Nguyễn Anh Hoàng (Chuyên khoa 1)
-`;
+Xét nghiệm tại Diag – Đối tác của Phòng Khám
+Friend Medical Clinic hợp tác với Diag, trung tâm xét nghiệm uy tín tại Việt Nam, cung cấp dịch vụ xét nghiệm từ cơ bản đến chuyên sâu.
+
+
+1. Gói xét nghiệm tổng quát
+Cơ bản: Huyết học, sinh hóa, đánh giá chức năng gan, thận.
+Nâng cao: Phát hiện viêm gan B, C, bệnh tuyến giáp.
+2. Gói xét nghiệm chuyên sâu
+Tầm soát ung thư (bao gồm ung thư phụ khoa).
+Tầm soát tiểu đường: Đánh giá nguy cơ, kiểm soát bệnh.
+Tầm soát chức năng gan, thận: Phát hiện sớm tổn thương gan, thận.
+3. Dịch vụ lấy mẫu tại nhà
+Nhân viên y tế đến tận nhà lấy mẫu xét nghiệm.
+Kết quả trả qua Zalo hoặc SMS trong 24 giờ.`;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('endpoint-input').value = currentEndpoint;
             document.getElementById('system-prompt').value = DEFAULT_SYSTEM_PROMPT;
             
-            document.getElementById('add-endpoint-btn').addEventListener('click', addEndpoint);
-            document.getElementById('clear-chat-btn').addEventListener('click', clearChat);
             document.getElementById('send-btn').addEventListener('click', () => sendMessage());
+            document.getElementById('clear-chat-btn').addEventListener('click', clearChat);
             document.getElementById('user-input').addEventListener('keypress', handleKeyPress);
             document.getElementById('temperature').addEventListener('input', handleTemperatureChange);
             document.getElementById('model-select').addEventListener('change', handleModelChange);
+            document.getElementById('endpoint-input').addEventListener('change', handleEndpointChange);
 
-            updateEndpointsList();
             loadChatHistory();
             checkConnection();
         });
 
-        // Endpoint Management
-        function addEndpoint() {
-            const endpoint = document.getElementById('endpoint-input').value.trim();
-            if (!endpoint) return;
-
-            if (!savedEndpoints.includes(endpoint)) {
-                savedEndpoints.push(endpoint);
-                localStorage.setItem('savedEndpoints', JSON.stringify(savedEndpoints));
-            }
-            selectEndpoint(endpoint);
-        }
-
-        function selectEndpoint(endpoint) {
-            currentEndpoint = endpoint;
-            localStorage.setItem('currentEndpoint', endpoint);
-            document.getElementById('endpoint-input').value = endpoint;
-            updateEndpointsList();
+        function handleEndpointChange(e) {
+            currentEndpoint = e.target.value.trim();
             checkConnection();
         }
 
-        function removeEndpoint(endpoint) {
-            savedEndpoints = savedEndpoints.filter(e => e !== endpoint);
-            localStorage.setItem('savedEndpoints', JSON.stringify(savedEndpoints));
-            if (currentEndpoint === endpoint) {
-                currentEndpoint = savedEndpoints[0] || 'http://localhost:1234';
-                localStorage.setItem('currentEndpoint', currentEndpoint);
-                document.getElementById('endpoint-input').value = currentEndpoint;
-            }
-            updateEndpointsList();
-        }
+        function createMessageElement(isUser, text, messageId) {
+            const container = document.createElement('div');
+            container.className = `message-container ${isUser ? 'user-message' : 'bot-message'}`;
+            container.dataset.messageId = messageId;
 
-        function updateEndpointsList() {
-            const container = document.getElementById('saved-endpoints');
-            container.innerHTML = '';
-            savedEndpoints.forEach(endpoint => {
-                const chip = document.createElement('div');
-                chip.className = 'endpoint-chip' + (endpoint === currentEndpoint ? ' active' : '');
-                
-                const endpointSpan = document.createElement('span');
-                endpointSpan.textContent = endpoint;
-                endpointSpan.addEventListener('click', () => selectEndpoint(endpoint));
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.textContent = text;
 
-                const deleteSpan = document.createElement('span');
-                deleteSpan.textContent = '✕';
-                deleteSpan.style.cursor = 'pointer';
-                deleteSpan.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    removeEndpoint(endpoint);
+            container.appendChild(messageDiv);
+
+            // Add warning message for bot responses
+            if (!isUser) {
+                const warningDiv = document.createElement('div');
+                warningDiv.className = 'warning-message';
+                warningDiv.innerHTML = `
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Lưu ý: Thông tin trên do AI tạo ra, có thể không chính xác. Vui lòng tham khảo ý kiến bác sĩ để có hướng dẫn chính xác nhất.
+                `;
+                container.appendChild(warningDiv);
+
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'message-actions';
+                actionsDiv.innerHTML = `
+                    <button class="action-btn regenerate-btn" title="Tạo lại câu trả lời">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                    <button class="action-btn follow-up-btn" title="Yêu cầu thông tin chi tiết hơn">
+                        <i class="fas fa-reply"></i>
+                    </button>
+                    <button class="action-btn edit-btn" title="Chỉnh sửa">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                `;
+
+                container.appendChild(actionsDiv);
+
+                // Add event listeners for action buttons
+                actionsDiv.querySelector('.regenerate-btn').addEventListener('click', () => regenerateResponse(messageId));
+                actionsDiv.querySelector('.follow-up-btn').addEventListener('click', () => askFollowUp(messageId));
+                actionsDiv.querySelector('.edit-btn').addEventListener('click', () => editMessage(container));
+
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = 'feedback-buttons';
+                feedbackDiv.innerHTML = `
+                    <button class="feedback-btn" data-feedback="up" title="Helpful">
+                        <i class="fas fa-thumbs-up"></i>
+                    </button>
+                    <button class="feedback-btn" data-feedback="down" title="Not helpful">
+                        <i class="fas fa-thumbs-down"></i>
+                    </button>
+                `;
+
+                feedbackDiv.querySelectorAll('.feedback-btn').forEach(btn => {
+                    btn.addEventListener('click', () => handleFeedback(messageId, btn.dataset.feedback));
                 });
 
-                chip.appendChild(endpointSpan);
-                chip.appendChild(deleteSpan);
-                container.appendChild(chip);
+                container.appendChild(feedbackDiv);
+            }
+
+            return container;
+        }
+
+        async function regenerateResponse(messageId) {
+            const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
+            if (messageIndex === -1) return;
+
+            // Lấy tin nhắn gần nhất của user
+            const lastUserMessage = chatHistory[messageIndex - 1];
+            if (!lastUserMessage || lastUserMessage.role !== 'user') return;
+
+            // Cắt bỏ tin nhắn cũ và gửi lại
+            chatHistory = chatHistory.slice(0, messageIndex);
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            
+            // Xóa tin nhắn cũ khỏi giao diện
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (messageElement) {
+                messagesContainer.removeChild(messageElement);
+            }
+
+            // Gửi lại tin nhắn
+            document.getElementById('user-input').value = '';
+        }
+
+        function askFollowUp(messageId) {
+            const input = document.getElementById('user-input');
+            input.value = "Hãy cung cấp thêm thông tin chi tiết và đầy đủ hơn về nội dung trên";
+            input.focus();
+        }
+
+        function handleFeedback(messageId, feedback) {
+            const container = document.querySelector(`[data-message-id="${messageId}"]`);
+            const buttons = container.querySelectorAll('.feedback-btn');
+            
+            buttons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.feedback === feedback);
+            });
+
+            const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
+            if (messageIndex !== -1) {
+                chatHistory[messageIndex].feedback = feedback;
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            }
+        }
+
+        function editMessage(container) {
+            const messageDiv = container.querySelector('.message');
+            const originalText = messageDiv.textContent;
+            
+            const editDiv = document.createElement('div');
+            editDiv.className = 'edit-mode';
+            editDiv.innerHTML = `
+                <textarea>${originalText}</textarea>
+                <div class="edit-buttons">
+                    <button class="save-btn">Lưu</button>
+                    <button class="cancel-btn">Hủy</button>
+                </div>
+            `;
+
+            messageDiv.replaceWith(editDiv);
+
+            editDiv.querySelector('.save-btn').addEventListener('click', () => {
+                const newText = editDiv.querySelector('textarea').value;
+                messageDiv.textContent = newText;
+                editDiv.replaceWith(messageDiv);
+                
+                const messageId = container.dataset.messageId;
+                const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
+                if (messageIndex !== -1) {
+                    chatHistory[messageIndex].content = newText;
+                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+                }
+            });
+
+            editDiv.querySelector('.cancel-btn').addEventListener('click', () => {
+                editDiv.replaceWith(messageDiv);
             });
         }
 
-        function updateModelSelects() {
-            const modelSelect = document.getElementById('model-select');
-            modelSelect.innerHTML = availableModels
-                .map(model => `<option value="${model.id}" ${model.id === currentModel ? 'selected' : ''}>${model.id}</option>`)
-                .join('');
+        function loadChatHistory() {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = '';
+            chatHistory.forEach(msg => {
+                const messageElement = createMessageElement(msg.role === 'user', msg.content, msg.id);
+                container.appendChild(messageElement);
+            });
+            container.scrollTop = container.scrollHeight;
         }
 
-        function handleModelChange(e) {
-            currentModel = e.target.value;
-            localStorage.setItem('currentModel', currentModel);
+        function clearChat() {
+            chatHistory = [];
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            document.getElementById('chat-messages').innerHTML = '';
         }
 
-        // Connection Check
         async function checkConnection() {
             const indicator = document.getElementById('status-indicator');
             const statusText = document.getElementById('status-text');
@@ -503,140 +620,25 @@ Chuyên Khoa Nội:
             }
         }
 
-        // Message Management
-        function createMessageElement(isUser, text, messageId) {
-            const container = document.createElement('div');
-            container.className = `message-container ${isUser ? 'user-message' : 'bot-message'}`;
-            container.dataset.messageId = messageId;
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message';
-            messageDiv.textContent = text;
-
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'message-actions';
-
-            if (!isUser) {
-                actionsDiv.innerHTML = `
-                    <button class="action-btn regenerate-btn" title="Regenerate response">
-                        <i class="fas fa-redo"></i>
-                    </button>
-                    <button class="action-btn follow-up-btn" title="Ask follow-up">
-                        <i class="fas fa-reply"></i>
-                    </button>
-                    <button class="action-btn edit-btn" title="Edit message">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                `;
-
-                const feedbackDiv = document.createElement('div');
-                feedbackDiv.className = 'feedback-buttons';
-                feedbackDiv.innerHTML = `
-                    <button class="feedback-btn" data-feedback="up" title="Helpful">
-                        <i class="fas fa-thumbs-up"></i>
-                    </button>
-                    <button class="feedback-btn" data-feedback="down" title="Not helpful">
-                        <i class="fas fa-thumbs-down"></i>
-                    </button>
-                `;
-
-                feedbackDiv.querySelectorAll('.feedback-btn').forEach(btn => {
-                    btn.addEventListener('click', () => handleFeedback(messageId, btn.dataset.feedback));
-                });
-
-                container.appendChild(feedbackDiv);
-            }
-
-            container.appendChild(messageDiv);
-            container.appendChild(actionsDiv);
-
-            if (!isUser) {
-                actionsDiv.querySelector('.regenerate-btn').addEventListener('click', () => regenerateResponse(messageId));
-                actionsDiv.querySelector('.follow-up-btn').addEventListener('click', () => askFollowUp(messageId));
-                actionsDiv.querySelector('.edit-btn').addEventListener('click', () => editMessage(container));
-            }
-
-            return container;
+        function updateModelSelects() {
+            const modelSelect = document.getElementById('model-select');
+            modelSelect.innerHTML = availableModels
+                .map(model => `<option value="${model.id}" ${model.id === currentModel ? 'selected' : ''}>${model.id}</option>`)
+                .join('');
         }
 
-        function loadChatHistory() {
-            const container = document.getElementById('chat-messages');
-            container.innerHTML = '';
-            chatHistory.forEach(msg => {
-                const messageElement = createMessageElement(msg.role === 'user', msg.content, msg.id);
-                container.appendChild(messageElement);
-            });
+        function handleModelChange(e) {
+            currentModel = e.target.value;
         }
 
-        function clearChat() {
-            chatHistory = [];
-            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-            document.getElementById('chat-messages').innerHTML = '';
+        function handleTemperatureChange(e) {
+            document.getElementById('temperature-value').textContent = e.target.value;
         }
 
-        async function regenerateResponse(messageId) {
-            const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
-            if (messageIndex === -1) return;
-
-            chatHistory = chatHistory.slice(0, messageIndex);
-            await sendMessage(true);
-        }
-
-        function askFollowUp(messageId) {
-            const message = chatHistory.find(msg => msg.id === messageId);
-            if (!message) return;
-
-            const input = document.getElementById('user-input');
-            input.value = `Regarding your previous response about "${message.content.substring(0, 50)}...", `;
-            input.focus();
-        }
-
-        function editMessage(container) {
-            const messageDiv = container.querySelector('.message');
-            const originalText = messageDiv.textContent;
-            
-            const editDiv = document.createElement('div');
-            editDiv.className = 'edit-mode';
-            editDiv.innerHTML = `
-                <textarea>${originalText}</textarea>
-                <div class="edit-buttons">
-                    <button class="save-btn">Save</button>
-                    <button class="cancel-btn">Cancel</button>
-                </div>
-            `;
-
-            messageDiv.replaceWith(editDiv);
-
-            editDiv.querySelector('.save-btn').addEventListener('click', () => {
-                const newText = editDiv.querySelector('textarea').value;
-                messageDiv.textContent = newText;
-                editDiv.replaceWith(messageDiv);
-                
-                const messageId = container.dataset.messageId;
-                const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
-                if (messageIndex !== -1) {
-                    chatHistory[messageIndex].content = newText;
-                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                }
-            });
-
-            editDiv.querySelector('.cancel-btn').addEventListener('click', () => {
-                editDiv.replaceWith(messageDiv);
-            });
-        }
-
-        function handleFeedback(messageId, feedback) {
-            const container = document.querySelector(`[data-message-id="${messageId}"]`);
-            const buttons = container.querySelectorAll('.feedback-btn');
-            
-            buttons.forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.feedback === feedback);
-            });
-
-            const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
-            if (messageIndex !== -1) {
-                chatHistory[messageIndex].feedback = feedback;
-                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
             }
         }
 
@@ -735,7 +737,7 @@ Chuyên Khoa Nội:
                     });
                     
                     if (chatHistory.length > 100) {
-                        chatHistory = chatHistory.slice(-100);
+                        chatHistory = chatHistory.slice(-20);
                     }
                     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
                 }
@@ -751,17 +753,6 @@ Chuyên Khoa Nội:
                 inputField.value = '';
                 inputField.focus();
             }
-        }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
-
-        function handleTemperatureChange(e) {
-            document.getElementById('temperature-value').textContent = e.target.value;
         }
     </script>
 </body>
