@@ -10,9 +10,8 @@
         body {
             margin: 0;
             height: 100vh;
-            display: grid;
-            grid-template-columns: 250px 1fr;
             font-family: Arial, sans-serif;
+            overflow: hidden;
         }
 
         /* Settings Panel */
@@ -20,26 +19,67 @@
             background: #f8f9fa;
             padding: 15px;
             border-right: 1px solid #ddd;
+            width: 250px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
             overflow-y: auto;
+            transition: transform 0.3s ease;
+            z-index: 1000;
         }
 
-        .endpoint-config {
+        /* Mobile settings panel state */
+        @media (max-width: 768px) {
+            .settings-panel {
+                transform: translateX(-100%);
+            }
+            .settings-panel.open {
+                transform: translateX(0);
+            }
+        }
+
+        /* Overlay for mobile */
+        .settings-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        @media (max-width: 768px) {
+            .settings-overlay.active {
+                display: block;
+            }
+        }
+
+        .settings-group {
             margin-bottom: 20px;
-            padding: 10px;
-            background: #fff;
-            border-radius: 5px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .endpoint-input {
-            display: flex;
-            gap: 5px;
+        .settings-group h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .setting-item {
             margin-bottom: 10px;
         }
 
-        .endpoint-input input, .setting-item select {
-            flex: 1;
-            padding: 8px;
+        .setting-item label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .setting-item input[type="range"],
+        .setting-item input[type="number"],
+        .setting-item select {
+            width: 100%;
+            padding: 5px;
             border: 1px solid #ddd;
             border-radius: 4px;
         }
@@ -68,32 +108,65 @@
             background: #dc3545;
         }
 
-        .settings-group {
-            margin-bottom: 20px;
+        /* Chat Container */
+        .chat-container {
+            margin-left: 250px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        .settings-group h3 {
-            margin-bottom: 10px;
-            color: #333;
+        @media (max-width: 768px) {
+            .chat-container {
+                margin-left: 0;
+            }
         }
 
-        .setting-item {
-            margin-bottom: 10px;
+        .chat-header {
+            padding: 15px;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .setting-item label {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .setting-item input[type="range"],
-        .setting-item input[type="number"],
-        .setting-item select,
-        .setting-item textarea {
-            width: 100%;
+        .settings-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
             padding: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .settings-toggle {
+                display: block;
+            }
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: #fff;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            font-size: 16px;
         }
 
         /* Message styles */
@@ -174,45 +247,6 @@
             color: #333;
         }
 
-        /* Chat Container */
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        .chat-header {
-            padding: 15px;
-            background: #fff;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background: #fff;
-        }
-
-        .input-area {
-            padding: 20px;
-            background: #fff;
-            border-top: 1px solid #ddd;
-            display: flex;
-            gap: 10px;
-        }
-
-        .input-area input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-
         /* Feedback styles */
         .feedback-buttons {
             display: flex;
@@ -239,54 +273,7 @@
             border-color: #007bff;
         }
 
-        .feedback-notification {
-            font-size: 0.9em;
-            padding: 4px 8px;
-            margin-top: 4px;
-            border-radius: 4px;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .feedback-notification.thank-you {
-            color: #155724;
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-        }
-
-        .improved-note {
-            padding: 4px 8px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9em;
-            color: #666;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .improved-note i {
-            color: #28a745;
-        }
-
-        /* Edit mode */
-        .edit-mode textarea {
-            width: 100%;
-            min-height: 100px;
-            padding: 10px;
-            border: 2px solid #007bff;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-
-        .edit-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
+        /* Common button styles */
         button {
             padding: 8px 15px;
             background: #007bff;
@@ -305,10 +292,6 @@
             cursor: not-allowed;
         }
 
-        .loading {
-            opacity: 0.7;
-        }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
@@ -316,16 +299,11 @@
     </style>
 </head>
 <body>
+    <div class="settings-overlay"></div>
     <div class="settings-panel">
-        <div class="endpoint-config">
-            <h3>API Endpoint</h3>
-            <div class="endpoint-input">
-                <input type="text" id="endpoint-input" placeholder="Enter API endpoint" value="http://localhost:1234">
-            </div>
-            <div class="connection-status">
-                <div class="status-indicator" id="status-indicator"></div>
-                <span id="status-text">Checking connection...</span>
-            </div>
+        <div class="connection-status">
+            <div class="status-indicator" id="status-indicator"></div>
+            <span id="status-text">Checking connection...</span>
         </div>
 
         <div class="settings-group">
@@ -343,15 +321,14 @@
                 <label>Max Tokens</label>
                 <input type="number" id="max-tokens" value="500" min="1" max="2000">
             </div>
-            <div class="setting-item">
-                <label>System Prompt</label>
-                <textarea id="system-prompt" rows="4"></textarea>
-            </div>
         </div>
     </div>
 
     <div class="chat-container">
         <div class="chat-header">
+            <button class="settings-toggle" id="settings-toggle">
+                <i class="fas fa-cog"></i>
+            </button>
             <h2>Friend Medical Clinic Chatbot</h2>
             <div class="header-actions">
                 <button id="clear-chat-btn" title="Xóa toàn bộ cuộc trò chuyện">
@@ -373,73 +350,53 @@
 
 <script>
         // Global variables
-        let currentEndpoint = 'http://localhost:1234';
+        let currentEndpoint = '';
+        let systemPrompt = '';
         let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
         let availableModels = [];
         let currentModel = 'vistral-7b-chat';
         let isConnected = false;
 
-        const DEFAULT_SYSTEM_PROMPT = `Bạn là chatbot của phòng khám chuyên khoa Friend Medical Clinic, chỉ cung cấp thông tin về sức khỏe và dịch vụ y tế của phòng khám, thông tin chỉ tham khảo không thay thế bác sĩ, nhân viên y tế
-Quy tắc hoạt động:
-1. Chỉ trả lời các câu hỏi liên quan đến y tế, sức khỏe.
-2. Từ chối các chủ đề ngoài phạm vi y tế.
-3. không nói đến giá cả xét nghiệm, tên thuốc, hay tiền
-4. Tuyệt đối không đề cập đến chính trị, xã hội, bạo lực, tình dục, mãi dâm …
-Khi tư vấn, luôn đề cập đến triệu chứng, biến chứng, điều trị, phòng ngừa.
-5. Luôn khuyến khích bệnh nhân đến khám trực tiếp tại phòng khám.
-Thông tin phòng khám:
-Địa chỉ: A12 Saigon Villas Hill, 99 Lê Văn Việt, TP. Thủ Đức, TP. HCM.
-Điện thoại: 028 3535 5353
-Giờ làm việc:
-Thứ 2 - Thứ 7: 8:00 - 20:00
-Chủ nhật: 8:00 - 12:00
-Chuyên khoa & Đội ngũ bác sĩ
-1. Chuyên Khoa Sản Phụ Khoa
-Phòng khám có đội ngũ bác sĩ giàu kinh nghiệm từ Bệnh viện Từ Dũ – trung tâm sản khoa hàng đầu khu vực phía Nam.
-Các Bác sĩ:
-BS. Nguyễn Hoàng Lam (Chuyên khoa II)
-BS. Đào Hoàng Hoa Hà Hải Âu (Chuyên khoa I)
-BS. Nguyễn Thị Việt Linh (Chuyên khoa I)
-Dịch vụ:
+        // Khởi tạo các hàm đọc cấu hình
+        async function loadConfigurations() {
+            try {
+                // Đọc API URL
+                const apiResponse = await fetch('api_url.txt');
+                if (!apiResponse.ok) throw new Error('Không thể đọc api_url.txt');
+                currentEndpoint = (await apiResponse.text()).trim();
 
+                // Đọc System Prompt
+                const promptResponse = await fetch('system_prompt.txt');
+                if (!promptResponse.ok) throw new Error('Không thể đọc system_prompt.txt');
+                systemPrompt = (await promptResponse.text()).trim();
 
-Điều trị bệnh lý phụ khoa phức tạp: u xơ tử cung, u nang buồng trứng, tầm soát ung thư cổ tử cung.
-Chăm sóc thai sản toàn diện: khám thai định kỳ, sàng lọc trước sinh, hỗ trợ sinh tại Bệnh viện Từ Dũ.
-2. Chuyên Khoa Tai Mũi Họng
-Phòng khám cung cấp dịch vụ chẩn đoán và điều trị các bệnh lý Tai – Mũi – Họng với hệ thống nội soi hiện đại.
-Bác sĩ TMH
-BS. Dương Minh Trọng (Chuyên khoa I)
-BS. Sử Ngọc Kiều Chinh (Chuyên khoa I)
-Dịch vụ:
-Điều trị viêm xoang mãn tính, viêm amidan, viêm mũi dị ứng, chảy máu cam …
-Tầm soát ung thư vòm họng.
-3. Chuyên Khoa Nội
-Đội ngũ chuyên gia từ Bệnh viện FV với các lĩnh vực chuyên sâu.
-Bác sĩ:
-BS. Đỗ Thành Long (Chuyên khoa I)
-BS. Nguyễn Anh Hoàng (Chuyên khoa I)
-Dịch vụ:
-Nội tổng quát: Khám và điều trị bệnh lý thường gặp.
-Tim mạch: Chẩn đoán, điều trị bệnh tim mạch, theo dõi sau đặt stent.
-Nội tiết – Chuyển hóa: Điều trị đái tháo đường, rối loạn tuyến giáp, bệnh chuyển hóa.
-Lưu ý: Phòng khám không có ngoại khoa, nhi khoa, da liễu, nha khoa, nội soi tiêu hóa.
+                console.log('Đã tải cấu hình thành công');
+            } catch (error) {
+                console.error('Lỗi khi tải cấu hình:', error);
+                // Fallback values
+                currentEndpoint = 'http://localhost:1234';
+                systemPrompt = 'You are a helpful AI assistant.';
+            }
+        }
 
+        // Mobile settings panel handling
+        function initializeSettingsPanel() {
+            const settingsToggle = document.getElementById('settings-toggle');
+            const settingsPanel = document.querySelector('.settings-panel');
+            const overlay = document.querySelector('.settings-overlay');
 
-Xét nghiệm tại Diag – Đối tác của Phòng Khám
-Friend Medical Clinic hợp tác với Diag, trung tâm xét nghiệm uy tín tại Việt Nam, cung cấp dịch vụ xét nghiệm từ cơ bản đến chuyên sâu.
+            settingsToggle.addEventListener('click', () => {
+                settingsPanel.classList.toggle('open');
+                overlay.classList.toggle('active');
+            });
 
+            overlay.addEventListener('click', () => {
+                settingsPanel.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+        }
 
-1. Gói xét nghiệm tổng quát
-Cơ bản: Huyết học, sinh hóa, đánh giá chức năng gan, thận.
-Nâng cao: Phát hiện viêm gan B, C, bệnh tuyến giáp.
-2. Gói xét nghiệm chuyên sâu
-Tầm soát ung thư (bao gồm ung thư phụ khoa).
-Tầm soát tiểu đường: Đánh giá nguy cơ, kiểm soát bệnh.
-Tầm soát chức năng gan, thận: Phát hiện sớm tổn thương gan, thận.
-3. Dịch vụ lấy mẫu tại nhà
-Nhân viên y tế đến tận nhà lấy mẫu xét nghiệm.
-Kết quả trả qua Zalo hoặc SMS trong 24 giờ.`;
-
+        // Welcome message constant
         const WELCOME_MESSAGE = `Xin chào! Tôi là chatbot của Friend Medical Clinic. 😊
 
 Tôi có thể giúp bạn:
@@ -461,25 +418,19 @@ Cách tương tác với tôi:
 Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ trợ bạn tốt nhất! 🌟`;
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('endpoint-input').value = currentEndpoint;
-            document.getElementById('system-prompt').value = DEFAULT_SYSTEM_PROMPT;
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadConfigurations();
+            initializeSettingsPanel();
             
             document.getElementById('send-btn').addEventListener('click', () => sendMessage());
             document.getElementById('clear-chat-btn').addEventListener('click', clearChat);
             document.getElementById('user-input').addEventListener('keypress', handleKeyPress);
             document.getElementById('temperature').addEventListener('input', handleTemperatureChange);
             document.getElementById('model-select').addEventListener('change', handleModelChange);
-            document.getElementById('endpoint-input').addEventListener('change', handleEndpointChange);
 
             loadChatHistory();
             checkConnection();
         });
-
-        function handleEndpointChange(e) {
-            currentEndpoint = e.target.value.trim();
-            checkConnection();
-        }
 
         function createMessageElement(isUser, text, messageId) {
             const container = document.createElement('div');
@@ -492,7 +443,6 @@ Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ tr
 
             container.appendChild(messageDiv);
 
-            // Add warning message and actions for bot responses
             if (!isUser) {
                 const warningDiv = document.createElement('div');
                 warningDiv.className = 'warning-message';
@@ -511,17 +461,12 @@ Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ tr
                     <button class="action-btn follow-up-btn" title="Yêu cầu thông tin chi tiết hơn">
                         <i class="fas fa-reply"></i>
                     </button>
-                    <button class="action-btn edit-btn" title="Chỉnh sửa">
-                        <i class="fas fa-edit"></i>
-                    </button>
                 `;
 
                 container.appendChild(actionsDiv);
 
-                // Add event listeners for action buttons
                 actionsDiv.querySelector('.regenerate-btn').addEventListener('click', () => regenerateResponse(messageId));
                 actionsDiv.querySelector('.follow-up-btn').addEventListener('click', () => askFollowUp(messageId));
-                actionsDiv.querySelector('.edit-btn').addEventListener('click', () => editMessage(container));
 
                 const feedbackDiv = document.createElement('div');
                 feedbackDiv.className = 'feedback-buttons';
@@ -549,7 +494,6 @@ Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ tr
             container.innerHTML = '';
             
             if (chatHistory.length === 0) {
-                // Add welcome message when there's no chat history
                 const welcomeMessageId = Date.now().toString();
                 const messageElement = createMessageElement(false, WELCOME_MESSAGE, welcomeMessageId);
                 container.appendChild(messageElement);
@@ -561,7 +505,6 @@ Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ tr
                 });
                 localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
             } else {
-                // Load existing chat history
                 chatHistory.forEach(msg => {
                     const messageElement = createMessageElement(msg.role === 'user', msg.content, msg.id);
                     container.appendChild(messageElement);
@@ -574,7 +517,6 @@ Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ tr
             const container = document.querySelector(`[data-message-id="${messageId}"]`);
             const buttons = container.querySelectorAll('.feedback-btn');
             
-            // Remove existing feedback notification if any
             const existingNotification = container.querySelector('.feedback-notification');
             if (existingNotification) {
                 existingNotification.remove();
@@ -589,12 +531,10 @@ Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ tr
                 chatHistory[messageIndex].feedback = feedback;
                 
                 if (feedback === 'down') {
-                    // Handle dislike
                     chatHistory[messageIndex].incorrect = true;
                     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
                     await generateImprovedResponse(messageId, messageIndex);
                 } else if (feedback === 'up') {
-                    // Handle like - show thank you message
                     const thankYouDiv = document.createElement('div');
                     thankYouDiv.className = 'feedback-notification thank-you';
                     thankYouDiv.innerHTML = '<i class="fas fa-heart"></i> Cảm ơn phản hồi của bạn!';
@@ -610,8 +550,7 @@ Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ tr
                 const incorrectMessage = chatHistory[incorrectIndex];
                 const userMessage = chatHistory[incorrectIndex - 1];
 
-                // Create improved system prompt
-                const improvedSystemPrompt = `${document.getElementById('system-prompt').value}
+                const improvedSystemPrompt = `${systemPrompt}
 
 Lưu ý: Câu trả lời trước đã được đánh giá là chưa tốt. Đây là câu trả lời cần cải thiện:
 "${incorrectMessage.content}"
@@ -648,13 +587,11 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
                 const botMessageId = Date.now().toString();
                 const botMessage = createMessageElement(false, '', botMessageId);
                 
-                // Add improvement note
                 const improvedNote = document.createElement('div');
                 improvedNote.className = 'improved-note';
                 improvedNote.innerHTML = `<i class="fas fa-sync"></i> Câu trả lời đã được cải thiện dựa trên feedback`;
                 botMessage.insertBefore(improvedNote, botMessage.firstChild);
                 
-                // Replace old message
                 const oldMessage = document.querySelector(`[data-message-id="${messageId}"]`);
                 if (oldMessage) {
                     oldMessage.replaceWith(botMessage);
@@ -685,7 +622,7 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
                                     document.getElementById('chat-messages').scrollHeight;
                             }
                         } catch (e) {
-                            console.error('Error parsing streaming response:', e, 'Line:', line);
+                            console.error('Error parsing streaming response:', e);
                         }
                     }
                 }
@@ -719,15 +656,12 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
             if (messageIndex === -1) return;
 
             try {
-                // Lấy tin nhắn gần nhất của user
                 const lastUserMessage = chatHistory[messageIndex - 1];
                 if (!lastUserMessage || lastUserMessage.role !== 'user') return;
 
-                // Cắt bỏ tin nhắn cũ
                 chatHistory = chatHistory.slice(0, messageIndex);
                 localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
                 
-                // Add regeneration note
                 const noteDiv = document.createElement('div');
                 noteDiv.className = 'improved-note';
                 noteDiv.innerHTML = `<i class="fas fa-redo"></i> Đang tạo lại câu trả lời...`;
@@ -740,7 +674,7 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
                 const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
                     method: 'POST',
                     headers: {
-'Content-Type': 'application/json',
+                        'Content-Type': 'application/json',
                         'Accept': 'application/json',
                         'ngrok-skip-browser-warning': 'true'
                     },
@@ -750,7 +684,7 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
                         messages: [
                             {
                                 role: 'system',
-                                content: document.getElementById('system-prompt').value
+                                content: systemPrompt
                             },
                             ...chatHistory
                         ],
@@ -767,13 +701,12 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
                 const botMessageId = Date.now().toString();
                 const botMessage = createMessageElement(false, '', botMessageId);
                 
-                // Replace old message
                 if (oldMessage) {
                     oldMessage.replaceWith(botMessage);
                 }
                 
                 const botMessageContent = botMessage.querySelector('.message');
-                const reader = response.body.getReader();
+const reader = response.body.getReader();
                 let botReply = '';
 
                 while (true) {
@@ -797,7 +730,7 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
                                     document.getElementById('chat-messages').scrollHeight;
                             }
                         } catch (e) {
-                            console.error('Error parsing streaming response:', e, 'Line:', line);
+                            console.error('Error parsing streaming response:', e);
                         }
                     }
                 }
@@ -832,44 +765,6 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
             input.setSelectionRange(input.value.length, input.value.length);
         }
 
-        function editMessage(container) {
-            const messageDiv = container.querySelector('.message');
-            const originalText = messageDiv.textContent;
-            
-            const editDiv = document.createElement('div');
-            editDiv.className = 'edit-mode';
-            editDiv.innerHTML = `
-                <textarea>${originalText}</textarea>
-                <div class="edit-buttons">
-                    <button class="save-btn">Lưu</button>
-                    <button class="cancel-btn">Hủy</button>
-                </div>
-            `;
-
-            messageDiv.replaceWith(editDiv);
-
-            const textarea = editDiv.querySelector('textarea');
-            textarea.focus();
-            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-
-            editDiv.querySelector('.save-btn').addEventListener('click', () => {
-                const newText = editDiv.querySelector('textarea').value;
-                messageDiv.textContent = newText;
-                editDiv.replaceWith(messageDiv);
-                
-                const messageId = container.dataset.messageId;
-                const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
-                if (messageIndex !== -1) {
-                    chatHistory[messageIndex].content = newText;
-                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                }
-            });
-
-            editDiv.querySelector('.cancel-btn').addEventListener('click', () => {
-                editDiv.replaceWith(messageDiv);
-            });
-        }
-
         function clearChat() {
             if (confirm('Bạn có chắc muốn xóa toàn bộ cuộc trò chuyện không?')) {
                 chatHistory = [];
@@ -893,13 +788,7 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
                     mode: 'cors'
                 });
 
-                const rawText = await response.text();
-                let data;
-                try {
-                    data = JSON.parse(rawText);
-                } catch (e) {
-                    throw new Error(`Invalid JSON response. Raw response: ${rawText.substring(0, 100)}...`);
-                }
+                const data = await response.json();
 
                 if (!data || !data.data) {
                     throw new Error('Invalid API response format');
@@ -946,7 +835,7 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
             }
         }
 
-        async function sendMessage(isRegenerate = false) {
+        async function sendMessage() {
             if (!isConnected) {
                 alert('Vui lòng kiểm tra kết nối đến API endpoint.');
                 return;
@@ -986,7 +875,7 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
                         messages: [
                             {
                                 role: 'system',
-                                content: document.getElementById('system-prompt').value
+                                content: systemPrompt
                             },
                             ...chatHistory
                         ],
@@ -1028,7 +917,7 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
                                     document.getElementById('chat-messages').scrollHeight;
                             }
                         } catch (e) {
-                            console.error('Error parsing streaming response:', e, 'Line:', line);
+                            console.error('Error parsing streaming response:', e);
                         }
                     }
                 }
