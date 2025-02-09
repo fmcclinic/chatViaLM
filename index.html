@@ -1,4 +1,4 @@
-@ -1,956 +0,0 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -546,111 +546,7 @@ Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ tr
             }
         }
 
-        async function generateImprovedResponse(messageId, incorrectIndex) {
-            try {
-                const incorrectMessage = chatHistory[incorrectIndex];
-                const userMessage = chatHistory[incorrectIndex - 1];
 
-                const improvedSystemPrompt = `${systemPrompt}
-
-Lưu ý: Câu trả lời trước đã được đánh giá là chưa tốt. Đây là câu trả lời cần cải thiện:
-"${incorrectMessage.content}"
-
-Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn.`;
-
-                const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    mode: 'cors',
-                    body: JSON.stringify({
-                        model: currentModel,
-                        messages: [
-                            {
-                                role: 'system',
-                                content: improvedSystemPrompt
-                            },
-                            userMessage,
-                        ],
-                        temperature: parseFloat(document.getElementById('temperature').value),
-                        max_tokens: parseInt(document.getElementById('max-tokens').value),
-                        stream: true
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-                }
-
-                const botMessageId = Date.now().toString();
-                const botMessage = createMessageElement(false, '', botMessageId);
-                
-                const improvedNote = document.createElement('div');
-                improvedNote.className = 'improved-note';
-                improvedNote.innerHTML = `<i class="fas fa-sync"></i> Câu trả lời đã được cải thiện dựa trên feedback`;
-                botMessage.insertBefore(improvedNote, botMessage.firstChild);
-                
-                const oldMessage = document.querySelector(`[data-message-id="${messageId}"]`);
-                if (oldMessage) {
-                    oldMessage.replaceWith(botMessage);
-                }
-                
-                const botMessageContent = botMessage.querySelector('.message');
-                const reader = response.body.getReader();
-                let botReply = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = new TextDecoder().decode(value);
-                    const lines = chunk.split('\n');
-                    
-                    for (const line of lines) {
-                        if (line.trim() === '' || line.includes('[DONE]')) continue;
-                        
-                        try {
-                            const json = JSON.parse(line.replace(/^data: /, ''));
-                            const token = json.choices[0]?.delta?.content || '';
-                            
-                            if (token) {
-                                botReply += token;
-                                botMessageContent.textContent = botReply;
-                                document.getElementById('chat-messages').scrollTop = 
-                                    document.getElementById('chat-messages').scrollHeight;
-                            }
-                        } catch (e) {
-                            console.error('Error parsing streaming response:', e);
-                        }
-                    }
-                }
-
-                if (botReply.trim()) {
-                    chatHistory.push({ 
-                        id: botMessageId,
-                        role: 'assistant', 
-                        content: botReply,
-                        improvedFrom: messageId
-                    });
-                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                }
-
-            } catch (error) {
-                console.error('Error in generateImprovedResponse:', error);
-                const errorMessage = createMessageElement(
-                    false, 
-                    `Lỗi: Không thể tạo câu trả lời cải thiện. ${error.message}`, 
-                    Date.now().toString()
-                );
-                const oldMessage = document.querySelector(`[data-message-id="${messageId}"]`);
-                if (oldMessage) {
-                    oldMessage.replaceWith(errorMessage);
-                }
-            }
-        }
 
         async function regenerateResponse(messageId) {
             const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
