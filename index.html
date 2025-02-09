@@ -25,21 +25,17 @@
             left: 0;
             top: 0;
             overflow-y: auto;
+            transform: translateX(-100%); /* Mặc định ẩn */
             transition: transform 0.3s ease;
             z-index: 1000;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
         }
 
-        /* Mobile settings panel state */
-        @media (max-width: 768px) {
-            .settings-panel {
-                transform: translateX(-100%);
-            }
-            .settings-panel.open {
-                transform: translateX(0);
-            }
+        .settings-panel.open {
+            transform: translateX(0); /* Hiện khi có class open */
         }
 
-        /* Overlay for mobile */
+        /* Overlay for settings panel */
         .settings-overlay {
             display: none;
             position: fixed;
@@ -49,14 +45,58 @@
             bottom: 0;
             background: rgba(0, 0, 0, 0.5);
             z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        @media (max-width: 768px) {
-            .settings-overlay.active {
-                display: block;
-            }
+        .settings-overlay.active {
+            display: block;
+            opacity: 1;
         }
 
+        /* Settings Toggle Button */
+        .settings-toggle {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 8px;
+            color: #666;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .settings-toggle:hover {
+            background-color: #f0f0f0;
+        }
+
+        .settings-toggle i {
+            transition: transform 0.3s;
+        }
+
+        .settings-toggle.active i {
+            transform: rotate(180deg);
+        }
+
+        /* Settings Close Button */
+        .settings-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #666;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .settings-close:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* Settings Groups */
         .settings-group {
             margin-bottom: 20px;
         }
@@ -89,9 +129,10 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            background: #f8f9fa;
+            font-size: 0.9rem;
         }
 
         .status-indicator {
@@ -110,16 +151,10 @@
 
         /* Chat Container */
         .chat-container {
-            margin-left: 250px;
+            width: 100%;
             height: 100vh;
             display: flex;
             flex-direction: column;
-        }
-
-        @media (max-width: 768px) {
-            .chat-container {
-                margin-left: 0;
-            }
         }
 
         .chat-header {
@@ -127,23 +162,14 @@
             background: #fff;
             border-bottom: 1px solid #ddd;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 15px;
         }
 
-        .settings-toggle {
-            display: none;
-            background: none;
-            border: none;
+        .chat-header h2 {
+            flex: 1;
+            margin: 0;
             font-size: 1.2rem;
-            cursor: pointer;
-            padding: 5px;
-        }
-
-        @media (max-width: 768px) {
-            .settings-toggle {
-                display: block;
-            }
         }
 
         .chat-messages {
@@ -185,6 +211,20 @@
             white-space: pre-wrap;
         }
 
+        .user-message {
+            margin-left: auto;
+        }
+
+        .user-message .message {
+            background: #007bff;
+            color: white;
+        }
+
+        .bot-message .message {
+            background: #f1f1f1;
+            color: #333;
+        }
+
         /* Warning Message Style */
         .warning-message {
             font-size: 0.9em;
@@ -204,6 +244,7 @@
             color: #856404;
         }
 
+        /* Message Actions */
         .message-actions {
             display: none;
             position: absolute;
@@ -230,20 +271,6 @@
 
         .action-btn:hover {
             background: rgba(0,0,0,0.1);
-            color: #333;
-        }
-
-        .user-message {
-            margin-left: auto;
-        }
-
-        .user-message .message {
-            background: #007bff;
-            color: white;
-        }
-
-        .bot-message .message {
-            background: #f1f1f1;
             color: #333;
         }
 
@@ -301,13 +328,11 @@
 <body>
     <div class="settings-overlay"></div>
     <div class="settings-panel">
-        <div class="connection-status">
-            <div class="status-indicator" id="status-indicator"></div>
-            <span id="status-text">Checking connection...</span>
-        </div>
-
+        <button class="settings-close" title="Đóng cài đặt">
+            <i class="fas fa-times"></i>
+        </button>
         <div class="settings-group">
-            <h3>Chat Settings</h3>
+            <h3>Cài đặt Chat</h3>
             <div class="setting-item">
                 <label>Model</label>
                 <select id="model-select" class="model-select"></select>
@@ -326,15 +351,17 @@
 
     <div class="chat-container">
         <div class="chat-header">
-            <button class="settings-toggle" id="settings-toggle">
+            <button class="settings-toggle" id="settings-toggle" title="Mở cài đặt">
                 <i class="fas fa-cog"></i>
             </button>
             <h2>Friend Medical Clinic Chatbot</h2>
-            <div class="header-actions">
-                <button id="clear-chat-btn" title="Xóa toàn bộ cuộc trò chuyện">
-                    <i class="fas fa-trash"></i> Xóa Chat
-                </button>
+            <div class="connection-status">
+                <div class="status-indicator" id="status-indicator"></div>
+                <span id="status-text">Checking...</span>
             </div>
+            <button id="clear-chat-btn" title="Xóa toàn bộ cuộc trò chuyện">
+                <i class="fas fa-trash"></i>
+            </button>
         </div>
         <div class="chat-messages" id="chat-messages"></div>
         <div class="input-area">
@@ -347,8 +374,56 @@
             </button>
         </div>
     </div>
-
 <script>
+// Add this to your existing initialization code
+function initializeSettingsPanel() {
+    const settingsToggle = document.getElementById('settings-toggle');
+    const settingsPanel = document.querySelector('.settings-panel');
+    const settingsOverlay = document.querySelector('.settings-overlay');
+    const settingsClose = document.querySelector('.settings-close');
+
+    // Toggle settings panel
+    function toggleSettings() {
+        const isOpen = settingsPanel.classList.contains('open');
+        
+        settingsPanel.classList.toggle('open');
+        settingsOverlay.classList.toggle('active');
+        settingsToggle.classList.toggle('active');
+        
+        // Save state to localStorage
+        localStorage.setItem('settingsPanelOpen', !isOpen);
+    }
+
+    // Close settings panel
+    function closeSettings() {
+        settingsPanel.classList.remove('open');
+        settingsOverlay.classList.remove('active');
+        settingsToggle.classList.remove('active');
+        localStorage.setItem('settingsPanelOpen', false);
+    }
+
+    // Event listeners
+    settingsToggle.addEventListener('click', toggleSettings);
+    settingsClose.addEventListener('click', closeSettings);
+    settingsOverlay.addEventListener('click', closeSettings);
+
+    // Handle escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && settingsPanel.classList.contains('open')) {
+            closeSettings();
+        }
+    });
+
+    // Restore previous state
+    const wasOpen = localStorage.getItem('settingsPanelOpen') === 'true';
+    if (wasOpen) {
+        toggleSettings();
+    }
+}
+
+
+
+
         // Global variables
         let currentEndpoint = '';
         let systemPrompt = '';
@@ -418,6 +493,8 @@ Cách tương tác với tôi:
 Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ trợ bạn tốt nhất! 🌟`;
 
         // Initialize
+        // Update your DOMContentLoaded event
+
         document.addEventListener('DOMContentLoaded', async () => {
             await loadConfigurations();
             initializeSettingsPanel();
