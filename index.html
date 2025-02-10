@@ -48,24 +48,6 @@
             transform: translateX(0);
         }
 
-        /* Message Counter */
-        .message-counter {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(255,255,255,0.9);
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.9rem;
-            z-index: 100;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .message-counter.warning {
-            background: #fff3cd;
-            color: #856404;
-        }
-
         /* Overlay */
         .settings-overlay {
             display: none;
@@ -121,8 +103,15 @@
             }
         }
 
-        /* Connection Status */
-        .connection-status {
+        /* Header Actions Group */
+        .header-status-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Connection Status and Message Counter */
+        .connection-status, .message-counter {
             display: flex;
             align-items: center;
             gap: 5px;
@@ -132,9 +121,17 @@
             font-size: 0.9rem;
         }
 
+        .message-counter.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
         @media (max-width: 768px) {
-            .connection-status span {
-                display: none; /* Hide status text on mobile */
+            .connection-status span, .message-counter span {
+                display: none; /* Hide text on mobile */
+            }
+            .connection-status, .message-counter {
+                padding: 5px;
             }
         }
 
@@ -150,6 +147,48 @@
 
         .status-offline {
             background: #dc3545;
+        }
+
+        /* Settings Toggle Button */
+        .settings-toggle {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 8px;
+            color: #666;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .settings-toggle:hover {
+            background-color: #f0f0f0;
+        }
+
+        .settings-toggle i {
+            transition: transform 0.3s;
+        }
+
+        .settings-toggle.active i {
+            transform: rotate(180deg);
+        }
+
+        /* Settings Close Button */
+        .settings-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #666;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .settings-close:hover {
+            background-color: #f0f0f0;
         }
 
         /* Chat Messages Area */
@@ -260,47 +299,6 @@
             }
         }
 
-        /* Buttons */
-        button {
-            padding: 8px 15px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        button:hover {
-            background: #0056b3;
-        }
-
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .settings-toggle {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            color: #666;
-            padding: 8px;
-            border-radius: 4px;
-        }
-
-        .settings-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            color: #666;
-            padding: 5px;
-            border-radius: 4px;
-        }
-
         /* Message Actions */
         .message-actions {
             display: none;
@@ -315,6 +313,20 @@
 
         .message-container:hover .message-actions {
             display: flex;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            color: #666;
+            border-radius: 4px;
+        }
+
+        .action-btn:hover {
+            background: rgba(0,0,0,0.1);
+            color: #333;
         }
 
         /* Feedback Buttons */
@@ -371,6 +383,26 @@
             border-radius: 4px;
         }
 
+        /* Common button styles */
+        button {
+            padding: 8px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
         /* Animations */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-5px); }
@@ -402,26 +434,25 @@
         </div>
     </div>
 
-    <div class="message-counter">
-        <span id="message-count">0/20</span> tin nhắn
-    </div>
-
     <div class="chat-container">
         <div class="chat-header">
             <button class="settings-toggle" id="settings-toggle" title="Mở cài đặt">
                 <i class="fas fa-cog"></i>
             </button>
             <h2>Friend Medical Clinic Chatbot</h2>
-            <div class="connection-status">
-                <div class="status-indicator" id="status-indicator"></div>
-                <span id="status-text">Checking...</span>
+            <div class="header-status-group">
+                <div class="connection-status">
+                    <div class="status-indicator" id="status-indicator"></div>
+                    <span id="status-text">Checking...</span>
+                </div>
+                <div class="message-counter">
+                    <i class="fas fa-comments"></i>
+                    <span id="message-count">0/20</span>
+                </div>
+                <button id="restart-chat-btn" title="Bắt đầu lại cuộc trò chuyện">
+                    <i class="fas fa-redo"></i>
+                </button>
             </div>
-            <button id="restart-chat-btn" title="Bắt đầu lại cuộc trò chuyện">
-                <i class="fas fa-redo"></i>
-            </button>
-            <button id="clear-chat-btn" title="Xóa toàn bộ cuộc trò chuyện">
-                <i class="fas fa-trash"></i>
-            </button>
         </div>
         <div class="chat-messages" id="chat-messages"></div>
         <div class="input-area">
@@ -499,27 +530,30 @@
 
     // Update message counter
     function updateMessageCounter() {
-        const counter = document.getElementById('message-count');
-        const count = chatHistory.length;
-        counter.textContent = `${count}/${MAX_MESSAGES}`;
-        
-        // Add warning class when approaching limit
-        const counterElement = document.querySelector('.message-counter');
-        if (count >= MAX_MESSAGES - 4) {
-            counterElement.classList.add('warning');
-        } else {
-            counterElement.classList.remove('warning');
+    const counter = document.getElementById('message-count');
+    const count = chatHistory.length;
+    counter.textContent = `${count}/20`;
+    
+    const counterElement = document.querySelector('.message-counter');
+    if (count >= MAX_MESSAGES - 4) {
+        counterElement.classList.add('warning');
+        // Thêm thông báo khi gần đạt giới hạn
+        if (count === MAX_MESSAGES - 1) {
+            alert('Bạn còn 1 tin nhắn cuối cùng. Hãy bấm nút "Bắt đầu lại" để tạo cuộc trò chuyện mới.');
         }
-
-        // Disable input when limit reached
-        const inputField = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-btn');
-        if (count >= MAX_MESSAGES) {
-            inputField.disabled = true;
-            sendButton.disabled = true;
-            inputField.placeholder = 'Đã đạt giới hạn tin nhắn. Vui lòng bắt đầu lại.';
-        }
+    } else {
+        counterElement.classList.remove('warning');
     }
+
+    // Disable input khi đạt giới hạn
+    const inputField = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-btn');
+    if (count >= MAX_MESSAGES) {
+        inputField.disabled = true;
+        sendButton.disabled = true;
+        inputField.placeholder = 'Đã đạt giới hạn tin nhắn. Vui lòng bắt đầu lại.';
+    }
+}
 
     // Welcome message
     const WELCOME_MESSAGE = `Xin chào! Tôi là chatbot của Friend Medical Clinic. 😊
@@ -549,7 +583,7 @@ Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ tr
         initializeSettingsPanel();
         
         document.getElementById('send-btn').addEventListener('click', () => sendMessage());
-        document.getElementById('clear-chat-btn').addEventListener('click', clearChat);
+        
         document.getElementById('restart-chat-btn').addEventListener('click', restartChat);
         document.getElementById('user-input').addEventListener('keypress', handleKeyPress);
         document.getElementById('temperature').addEventListener('input', handleTemperatureChange);
@@ -696,29 +730,22 @@ Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ tr
         updateMessageCounter();
     }
 
-    function clearChat() {
-        if (confirm('Bạn có chắc muốn xóa toàn bộ cuộc trò chuyện không?')) {
-            chatHistory = [];
-            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-            loadChatHistory();
-        }
-    }
 
     function restartChat() {
-        if (confirm('Bạn có muốn bắt đầu cuộc trò chuyện mới không?')) {
-            chatHistory = [];
-            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-            loadChatHistory();
-            
-            // Re-enable input
-            const inputField = document.getElementById('user-input');
-            const sendButton = document.getElementById('send-btn');
-            inputField.disabled = false;
-            sendButton.disabled = false;
-            inputField.placeholder = 'Nhập câu hỏi của bạn...';
-            inputField.focus();
-        }
+    if (confirm('Bạn có muốn bắt đầu cuộc trò chuyện mới không?')) {
+        chatHistory = [];
+        localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        loadChatHistory();
+        
+        // Re-enable input
+        const inputField = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-btn');
+        inputField.disabled = false;
+        sendButton.disabled = false;
+        inputField.placeholder = 'Nhập câu hỏi của bạn...';
+        inputField.focus();
     }
+}
 
     async function handleFeedback(messageId, feedback) {
         const container = document.querySelector(`[data-message-id="${messageId}"]`);
