@@ -29,6 +29,8 @@
             transition: transform 0.3s ease;
             z-index: 1000;
             box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            max-width: 90vw; /* Giới hạn chiều rộng tối đa */
+            min-width: 280px; /* Đảm bảo không quá nhỏ */
         }
 
         /* Responsive settings panel */
@@ -179,17 +181,19 @@
 
         /* Settings Close Button */
         .settings-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: #666;
-            padding: 5px;
-            border-radius: 4px;
-        }
+   position: fixed; /* Thay vì absolute */
+   top: 15px;
+   right: 15px;
+   z-index: 1001; /* Luôn hiển thị trên cùng */
+   background: #fff; /* Nền trắng để dễ nhìn */
+   border-radius: 50%; /* Bo tròn */
+   width: 40px;
+   height: 40px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
 
         .settings-close:hover {
             background-color: #f0f0f0;
