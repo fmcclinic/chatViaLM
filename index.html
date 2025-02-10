@@ -581,7 +581,13 @@ Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ tr
     document.addEventListener('DOMContentLoaded', async () => {
         await loadConfigurations();
         initializeSettingsPanel();
-        
+         // Auto focus input field
+         const inputField = document.getElementById('user-input');
+        if (inputField) {
+            inputField.focus();
+            // Scroll input into view
+            inputField.scrollIntoView({ behavior: 'smooth' });
+        }
         document.getElementById('send-btn').addEventListener('click', () => sendMessage());
         
         document.getElementById('restart-chat-btn').addEventListener('click', restartChat);
