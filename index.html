@@ -19,7 +19,7 @@
             background: #f8f9fa;
             padding: 15px;
             border-right: 1px solid #ddd;
-            width: 250px;
+            width: 300px;
             height: 100vh;
             position: fixed;
             left: 0;
@@ -31,11 +31,42 @@
             box-shadow: 2px 0 5px rgba(0,0,0,0.1);
         }
 
-        .settings-panel.open {
-            transform: translateX(0); /* Hiện khi có class open */
+        /* Responsive settings panel */
+        @media (max-width: 768px) {
+            .settings-panel {
+                width: 100%; /* Full width on mobile */
+            }
         }
 
-        /* Overlay for settings panel */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .settings-panel {
+                width: 320px; /* Wider on tablet */
+            }
+        }
+
+        .settings-panel.open {
+            transform: translateX(0);
+        }
+
+        /* Message Counter */
+        .message-counter {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .message-counter.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        /* Overlay */
         .settings-overlay {
             display: none;
             position: fixed;
@@ -54,74 +85,40 @@
             opacity: 1;
         }
 
-        /* Settings Toggle Button */
-        .settings-toggle {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 8px;
-            color: #666;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-
-        .settings-toggle:hover {
-            background-color: #f0f0f0;
-        }
-
-        .settings-toggle i {
-            transition: transform 0.3s;
-        }
-
-        .settings-toggle.active i {
-            transform: rotate(180deg);
-        }
-
-        /* Settings Close Button */
-        .settings-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: #666;
-            padding: 5px;
-            border-radius: 4px;
-        }
-
-        .settings-close:hover {
-            background-color: #f0f0f0;
-        }
-
-        /* Settings Groups */
-        .settings-group {
-            margin-bottom: 20px;
-        }
-
-        .settings-group h3 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .setting-item {
-            margin-bottom: 10px;
-        }
-
-        .setting-item label {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .setting-item input[type="range"],
-        .setting-item input[type="number"],
-        .setting-item select {
+        /* Chat Container */
+        .chat-container {
             width: 100%;
-            padding: 5px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Styles */
+        .chat-header {
+            padding: 15px;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chat-header h2 {
+            flex: 1;
+            margin: 0;
+            font-size: 1.2rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @media (max-width: 768px) {
+            .chat-header {
+                padding: 10px;
+            }
+            .chat-header h2 {
+                font-size: 1rem;
+            }
         }
 
         /* Connection Status */
@@ -133,6 +130,12 @@
             border-radius: 15px;
             background: #f8f9fa;
             font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .connection-status span {
+                display: none; /* Hide status text on mobile */
+            }
         }
 
         .status-indicator {
@@ -149,29 +152,7 @@
             background: #dc3545;
         }
 
-        /* Chat Container */
-        .chat-container {
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-header {
-            padding: 15px;
-            background: #fff;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .chat-header h2 {
-            flex: 1;
-            margin: 0;
-            font-size: 1.2rem;
-        }
-
+        /* Chat Messages Area */
         .chat-messages {
             flex: 1;
             padding: 20px;
@@ -179,28 +160,24 @@
             background: #fff;
         }
 
-        .input-area {
-            padding: 20px;
-            background: #fff;
-            border-top: 1px solid #ddd;
-            display: flex;
-            gap: 10px;
+        @media (max-width: 768px) {
+            .chat-messages {
+                padding: 10px;
+            }
         }
 
-        .input-area input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-
-        /* Message styles */
+        /* Message Container */
         .message-container {
             position: relative;
-            max-width: 80%;
+            max-width: 85%;
             margin: 8px;
             animation: fadeIn 0.3s;
+        }
+
+        @media (max-width: 768px) {
+            .message-container {
+                max-width: 90%;
+            }
         }
 
         .message {
@@ -209,6 +186,13 @@
             line-height: 1.5;
             font-size: 16px;
             white-space: pre-wrap;
+        }
+
+        @media (max-width: 768px) {
+            .message {
+                font-size: 14px;
+                padding: 10px;
+            }
         }
 
         .user-message {
@@ -225,7 +209,7 @@
             color: #333;
         }
 
-        /* Warning Message Style */
+        /* Warning Message */
         .warning-message {
             font-size: 0.9em;
             color: #856404;
@@ -234,14 +218,87 @@
             padding: 8px 12px;
             border-radius: 4px;
             margin-top: 8px;
-            margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .warning-message i {
-            color: #856404;
+        @media (max-width: 768px) {
+            .warning-message {
+                font-size: 0.8em;
+                padding: 6px 10px;
+            }
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 15px;
+            background: #fff;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .input-area {
+                padding: 10px;
+            }
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .input-area input {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+        }
+
+        /* Buttons */
+        button {
+            padding: 8px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .settings-toggle {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #666;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .settings-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #666;
+            padding: 5px;
+            border-radius: 4px;
         }
 
         /* Message Actions */
@@ -260,21 +317,7 @@
             display: flex;
         }
 
-        .action-btn {
-            background: none;
-            border: none;
-            padding: 5px;
-            cursor: pointer;
-            color: #666;
-            border-radius: 4px;
-        }
-
-        .action-btn:hover {
-            background: rgba(0,0,0,0.1);
-            color: #333;
-        }
-
-        /* Feedback styles */
+        /* Feedback Buttons */
         .feedback-buttons {
             display: flex;
             gap: 5px;
@@ -287,11 +330,11 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
         }
 
         .feedback-btn:hover {
-            background-color: #f8f9fa;
+            background: #f8f9fa;
         }
 
         .feedback-btn.active {
@@ -300,25 +343,35 @@
             border-color: #007bff;
         }
 
-        /* Common button styles */
-        button {
-            padding: 8px 15px;
-            background: #007bff;
-            color: white;
-            border: none;
+        /* Settings Content */
+        .settings-group {
+            margin-bottom: 20px;
+        }
+
+        .settings-group h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .setting-item {
+            margin-bottom: 15px;
+        }
+
+        .setting-item label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .setting-item input[type="range"],
+        .setting-item input[type="number"],
+        .setting-item select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
             border-radius: 4px;
-            cursor: pointer;
         }
 
-        button:hover {
-            background: #0056b3;
-        }
-
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
+        /* Animations */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
@@ -349,6 +402,10 @@
         </div>
     </div>
 
+    <div class="message-counter">
+        <span id="message-count">0/20</span> tin nhắn
+    </div>
+
     <div class="chat-container">
         <div class="chat-header">
             <button class="settings-toggle" id="settings-toggle" title="Mở cài đặt">
@@ -359,6 +416,9 @@
                 <div class="status-indicator" id="status-indicator"></div>
                 <span id="status-text">Checking...</span>
             </div>
+            <button id="restart-chat-btn" title="Bắt đầu lại cuộc trò chuyện">
+                <i class="fas fa-redo"></i>
+            </button>
             <button id="clear-chat-btn" title="Xóa toàn bộ cuộc trò chuyện">
                 <i class="fas fa-trash"></i>
             </button>
@@ -375,104 +435,94 @@
         </div>
     </div>
 <script>
-// Add this to your existing initialization code
-function initializeSettingsPanel() {
-    const settingsToggle = document.getElementById('settings-toggle');
-    const settingsPanel = document.querySelector('.settings-panel');
-    const settingsOverlay = document.querySelector('.settings-overlay');
-    const settingsClose = document.querySelector('.settings-close');
+    // Global variables
+    const MAX_MESSAGES = 20;
+    let currentEndpoint = '';
+    let systemPrompt = '';
+    let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+    let availableModels = [];
+    let currentModel = 'vistral-7b-chat';
+    let isConnected = false;
 
-    // Toggle settings panel
-    function toggleSettings() {
-        const isOpen = settingsPanel.classList.contains('open');
-        
-        settingsPanel.classList.toggle('open');
-        settingsOverlay.classList.toggle('active');
-        settingsToggle.classList.toggle('active');
-        
-        // Save state to localStorage
-        localStorage.setItem('settingsPanelOpen', !isOpen);
-    }
+    // Khởi tạo các hàm đọc cấu hình
+    async function loadConfigurations() {
+        try {
+            // Đọc API URL
+            const apiResponse = await fetch('api_url.txt');
+            if (!apiResponse.ok) throw new Error('Không thể đọc api_url.txt');
+            currentEndpoint = (await apiResponse.text()).trim();
 
-    // Close settings panel
-    function closeSettings() {
-        settingsPanel.classList.remove('open');
-        settingsOverlay.classList.remove('active');
-        settingsToggle.classList.remove('active');
-        localStorage.setItem('settingsPanelOpen', false);
-    }
+            // Đọc System Prompt
+            const promptResponse = await fetch('system_prompt.txt');
+            if (!promptResponse.ok) throw new Error('Không thể đọc system_prompt.txt');
+            systemPrompt = (await promptResponse.text()).trim();
 
-    // Event listeners
-    settingsToggle.addEventListener('click', toggleSettings);
-    settingsClose.addEventListener('click', closeSettings);
-    settingsOverlay.addEventListener('click', closeSettings);
-
-    // Handle escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && settingsPanel.classList.contains('open')) {
-            closeSettings();
+            console.log('Đã tải cấu hình thành công');
+        } catch (error) {
+            console.error('Lỗi khi tải cấu hình:', error);
+            // Fallback values
+            currentEndpoint = 'http://localhost:1234';
+            systemPrompt = 'You are a helpful AI assistant.';
         }
-    });
-
-    // Restore previous state
-    const wasOpen = localStorage.getItem('settingsPanelOpen') === 'true';
-    if (wasOpen) {
-        toggleSettings();
     }
-}
 
+    // Khởi tạo tính năng settings panel
+    function initializeSettingsPanel() {
+        const settingsToggle = document.getElementById('settings-toggle');
+        const settingsPanel = document.querySelector('.settings-panel');
+        const settingsClose = document.querySelector('.settings-close');
+        const overlay = document.querySelector('.settings-overlay');
 
+        function toggleSettings() {
+            settingsPanel.classList.toggle('open');
+            overlay.classList.toggle('active');
+            settingsToggle.classList.toggle('active');
+        }
 
+        function closeSettings() {
+            settingsPanel.classList.remove('open');
+            overlay.classList.remove('active');
+            settingsToggle.classList.remove('active');
+        }
 
-        // Global variables
-        let currentEndpoint = '';
-        let systemPrompt = '';
-        let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
-        let availableModels = [];
-        let currentModel = 'vistral-7b-chat';
-        let isConnected = false;
+        settingsToggle.addEventListener('click', toggleSettings);
+        settingsClose.addEventListener('click', closeSettings);
+        overlay.addEventListener('click', closeSettings);
 
-        // Khởi tạo các hàm đọc cấu hình
-        async function loadConfigurations() {
-            try {
-                // Đọc API URL
-                const apiResponse = await fetch('api_url.txt');
-                if (!apiResponse.ok) throw new Error('Không thể đọc api_url.txt');
-                currentEndpoint = (await apiResponse.text()).trim();
-
-                // Đọc System Prompt
-                const promptResponse = await fetch('system_prompt.txt');
-                if (!promptResponse.ok) throw new Error('Không thể đọc system_prompt.txt');
-                systemPrompt = (await promptResponse.text()).trim();
-
-                console.log('Đã tải cấu hình thành công');
-            } catch (error) {
-                console.error('Lỗi khi tải cấu hình:', error);
-                // Fallback values
-                currentEndpoint = 'http://localhost:1234';
-                systemPrompt = 'You are a helpful AI assistant.';
+        // Close settings on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && settingsPanel.classList.contains('open')) {
+                closeSettings();
             }
+        });
+    }
+
+    // Update message counter
+    function updateMessageCounter() {
+        const counter = document.getElementById('message-count');
+        const count = chatHistory.length;
+        counter.textContent = `${count}/${MAX_MESSAGES}`;
+        
+        // Add warning class when approaching limit
+        const counterElement = document.querySelector('.message-counter');
+        if (count >= MAX_MESSAGES - 4) {
+            counterElement.classList.add('warning');
+        } else {
+            counterElement.classList.remove('warning');
         }
 
-        // Mobile settings panel handling
-        function initializeSettingsPanel() {
-            const settingsToggle = document.getElementById('settings-toggle');
-            const settingsPanel = document.querySelector('.settings-panel');
-            const overlay = document.querySelector('.settings-overlay');
-
-            settingsToggle.addEventListener('click', () => {
-                settingsPanel.classList.toggle('open');
-                overlay.classList.toggle('active');
-            });
-
-            overlay.addEventListener('click', () => {
-                settingsPanel.classList.remove('open');
-                overlay.classList.remove('active');
-            });
+        // Disable input when limit reached
+        const inputField = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-btn');
+        if (count >= MAX_MESSAGES) {
+            inputField.disabled = true;
+            sendButton.disabled = true;
+            inputField.placeholder = 'Đã đạt giới hạn tin nhắn. Vui lòng bắt đầu lại.';
         }
+    }
 
-        // Welcome message constant
-        const WELCOME_MESSAGE = `Xin chào! Tôi là chatbot của Friend Medical Clinic. 😊
+    // Welcome message
+    const WELCOME_MESSAGE = `Xin chào! Tôi là chatbot của Friend Medical Clinic. 😊
 
 Tôi có thể giúp bạn:
 • Tư vấn về các vấn đề sức khỏe
@@ -486,698 +536,551 @@ Cách tương tác với tôi:
 💬 Chi tiết - Yêu cầu thông tin chi tiết hơn
 
 ⚠️ Lưu ý quan trọng:
+• Bạn có tối đa ${MAX_MESSAGES} tin nhắn trong một cuộc trò chuyện
 • Thông tin tôi cung cấp chỉ mang tính tham khảo
 • Vui lòng tham khảo ý kiến bác sĩ để có hướng dẫn chính xác nhất
 • Trong trường hợp khẩn cấp, hãy gọi ngay cho phòng khám: 028 3535 5353
 
 Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ trợ bạn tốt nhất! 🌟`;
 
-        // Initialize
-        // Update your DOMContentLoaded event
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadConfigurations();
+        initializeSettingsPanel();
+        
+        document.getElementById('send-btn').addEventListener('click', () => sendMessage());
+        document.getElementById('clear-chat-btn').addEventListener('click', clearChat);
+        document.getElementById('restart-chat-btn').addEventListener('click', restartChat);
+        document.getElementById('user-input').addEventListener('keypress', handleKeyPress);
+        document.getElementById('temperature').addEventListener('input', handleTemperatureChange);
+        document.getElementById('model-select').addEventListener('change', handleModelChange);
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            await loadConfigurations();
-            initializeSettingsPanel();
-            
-            document.getElementById('send-btn').addEventListener('click', () => sendMessage());
-            document.getElementById('clear-chat-btn').addEventListener('click', clearChat);
-            document.getElementById('user-input').addEventListener('keypress', handleKeyPress);
-            document.getElementById('temperature').addEventListener('input', handleTemperatureChange);
-            document.getElementById('model-select').addEventListener('change', handleModelChange);
+        loadChatHistory();
+        checkConnection();
+        updateMessageCounter();
+    });
 
-            loadChatHistory();
-            checkConnection();
-        });
+    // Handle stream response
+    async function processStreamResponse(reader, botMessageContent) {
+        let botReply = '';
+        
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-        function createMessageElement(isUser, text, messageId) {
-            const container = document.createElement('div');
-            container.className = `message-container ${isUser ? 'user-message' : 'bot-message'}`;
-            container.dataset.messageId = messageId;
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message';
-            messageDiv.textContent = text;
-
-            container.appendChild(messageDiv);
-
-            if (!isUser) {
-                const warningDiv = document.createElement('div');
-                warningDiv.className = 'warning-message';
-                warningDiv.innerHTML = `
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Lưu ý: Thông tin trên do AI tạo ra, có thể không chính xác. Vui lòng tham khảo ý kiến bác sĩ để có hướng dẫn chính xác nhất.
-                `;
-                container.appendChild(warningDiv);
-
-                const actionsDiv = document.createElement('div');
-                actionsDiv.className = 'message-actions';
-                actionsDiv.innerHTML = `
-                    <button class="action-btn regenerate-btn" title="Tạo lại câu trả lời">
-                        <i class="fas fa-redo"></i>
-                    </button>
-                    <button class="action-btn follow-up-btn" title="Yêu cầu thông tin chi tiết hơn">
-                        <i class="fas fa-reply"></i>
-                    </button>
-                `;
-
-                container.appendChild(actionsDiv);
-
-                actionsDiv.querySelector('.regenerate-btn').addEventListener('click', () => regenerateResponse(messageId));
-                actionsDiv.querySelector('.follow-up-btn').addEventListener('click', () => askFollowUp(messageId));
-
-                const feedbackDiv = document.createElement('div');
-                feedbackDiv.className = 'feedback-buttons';
-                feedbackDiv.innerHTML = `
-                    <button class="feedback-btn" data-feedback="up" title="Hữu ích">
-                        <i class="fas fa-thumbs-up"></i>
-                    </button>
-                    <button class="feedback-btn" data-feedback="down" title="Chưa hữu ích">
-                        <i class="fas fa-thumbs-down"></i>
-                    </button>
-                `;
-
-                feedbackDiv.querySelectorAll('.feedback-btn').forEach(btn => {
-                    btn.addEventListener('click', () => handleFeedback(messageId, btn.dataset.feedback));
-                });
-
-                container.appendChild(feedbackDiv);
-            }
-
-            return container;
-        }
-
-        function loadChatHistory() {
-            const container = document.getElementById('chat-messages');
-            container.innerHTML = '';
-            
-            if (chatHistory.length === 0) {
-                const welcomeMessageId = Date.now().toString();
-                const messageElement = createMessageElement(false, WELCOME_MESSAGE, welcomeMessageId);
-                container.appendChild(messageElement);
+                const chunk = new TextDecoder().decode(value);
+                const lines = chunk.split('\n');
                 
-                chatHistory.push({
-                    id: welcomeMessageId,
-                    role: 'assistant',
-                    content: WELCOME_MESSAGE
-                });
-                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-            } else {
-                chatHistory.forEach(msg => {
-                    const messageElement = createMessageElement(msg.role === 'user', msg.content, msg.id);
-                    container.appendChild(messageElement);
-                });
-            }
-            container.scrollTop = container.scrollHeight;
-        }
-
-        async function handleFeedback(messageId, feedback) {
-            const container = document.querySelector(`[data-message-id="${messageId}"]`);
-            const buttons = container.querySelectorAll('.feedback-btn');
-            
-            const existingNotification = container.querySelector('.feedback-notification');
-            if (existingNotification) {
-                existingNotification.remove();
-            }
-
-            buttons.forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.feedback === feedback);
-            });
-
-            const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
-            if (messageIndex !== -1) {
-                chatHistory[messageIndex].feedback = feedback;
-                
-                if (feedback === 'down') {
-                    chatHistory[messageIndex].incorrect = true;
-                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                    await generateImprovedResponse(messageId, messageIndex);
-                } else if (feedback === 'up') {
-                    const thankYouDiv = document.createElement('div');
-                    thankYouDiv.className = 'feedback-notification thank-you';
-                    thankYouDiv.innerHTML = '<i class="fas fa-heart"></i> Cảm ơn phản hồi của bạn!';
-                    container.appendChild(thankYouDiv);
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine === '' || trimmedLine.includes('[DONE]')) continue;
                     
-                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                }
-            }
-        }
-
-
-
-        async function regenerateResponse(messageId) {
-            const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
-            if (messageIndex === -1) return;
-
-            try {
-                const lastUserMessage = chatHistory[messageIndex - 1];
-                if (!lastUserMessage || lastUserMessage.role !== 'user') return;
-
-                chatHistory = chatHistory.slice(0, messageIndex);
-                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                
-                const noteDiv = document.createElement('div');
-                noteDiv.className = 'improved-note';
-                noteDiv.innerHTML = `<i class="fas fa-redo"></i> Đang tạo lại câu trả lời...`;
-                
-                const oldMessage = document.querySelector(`[data-message-id="${messageId}"]`);
-                if (oldMessage) {
-                    oldMessage.appendChild(noteDiv);
-                }
-
-                const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    mode: 'cors',
-                    body: JSON.stringify({
-                        model: currentModel,
-                        messages: [
-                            {
-                                role: 'system',
-                                content: systemPrompt
-                            },
-                            ...chatHistory
-                        ],
-                        temperature: parseFloat(document.getElementById('temperature').value),
-                        max_tokens: parseInt(document.getElementById('max-tokens').value),
-                        stream: true
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-                }
-
-                const botMessageId = Date.now().toString();
-                const botMessage = createMessageElement(false, '', botMessageId);
-                
-                if (oldMessage) {
-                    oldMessage.replaceWith(botMessage);
-                }
-                
-                const botMessageContent = botMessage.querySelector('.message');
-const reader = response.body.getReader();
-                let botReply = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = new TextDecoder().decode(value);
-                    const lines = chunk.split('\n');
-                    
-                    for (const line of lines) {
-                        if (line.trim() === '' || line.includes('[DONE]')) continue;
+                    try {
+                        // Check for error event
+                        if (trimmedLine.startsWith('event: error')) {
+                            console.error('Server sent error event:', trimmedLine);
+                            const errorMessage = trimmedLine.replace('event: error', '').trim();
+                            throw new Error(`Server error: ${errorMessage}`);
+                        }
                         
-                        try {
-                            const json = JSON.parse(line.replace(/^data: /, ''));
-                            const token = json.choices[0]?.delta?.content || '';
+                        // Process data stream
+                        if (trimmedLine.startsWith('data: ')) {
+                            const jsonStr = trimmedLine.replace('data: ', '');
+                            const json = JSON.parse(jsonStr);
+                            
+                            // Use optional chaining
+                            const token = json?.choices?.[0]?.delta?.content || '';
                             
                             if (token) {
                                 botReply += token;
                                 botMessageContent.textContent = botReply;
-                                document.getElementById('chat-messages').scrollTop = 
-                                    document.getElementById('chat-messages').scrollHeight;
+                                const chatMessages = document.getElementById('chat-messages');
+                                if (chatMessages) {
+                                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                                }
                             }
-                        } catch (e) {
-                            console.error('Error parsing streaming response:', e);
                         }
+                    } catch (parseError) {
+                        console.error('Error processing stream line:', parseError, 'Line:', trimmedLine);
                     }
                 }
-
-                if (botReply.trim()) {
-                    chatHistory.push({ 
-                        id: botMessageId,
-                        role: 'assistant', 
-                        content: botReply 
-                    });
-                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                }
-
-            } catch (error) {
-                console.error('Error in regenerateResponse:', error);
-                const errorMessage = createMessageElement(
-                    false, 
-                    `Lỗi: Không thể tạo lại câu trả lời. ${error.message}`, 
-                    Date.now().toString()
-                );
-                const oldMessage = document.querySelector(`[data-message-id="${messageId}"]`);
-                if (oldMessage) {
-                    oldMessage.replaceWith(errorMessage);
-                }
             }
+        } catch (streamError) {
+            console.error('Stream processing error:', streamError);
+            throw streamError;
+        }
+        
+        return botReply;
+    }
+
+    function createMessageElement(isUser, text, messageId) {
+        const container = document.createElement('div');
+        container.className = `message-container ${isUser ? 'user-message' : 'bot-message'}`;
+        container.dataset.messageId = messageId;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message';
+        messageDiv.textContent = text;
+
+        container.appendChild(messageDiv);
+
+        if (!isUser) {
+            const warningDiv = document.createElement('div');
+            warningDiv.className = 'warning-message';
+            warningDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i>
+                Lưu ý: Thông tin trên do AI tạo ra, có thể không chính xác. Vui lòng tham khảo ý kiến bác sĩ để có hướng dẫn chính xác nhất.
+            `;
+            container.appendChild(warningDiv);
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'message-actions';
+            actionsDiv.innerHTML = `
+                <button class="action-btn regenerate-btn" title="Tạo lại câu trả lời">
+                    <i class="fas fa-redo"></i>
+                </button>
+                <button class="action-btn follow-up-btn" title="Yêu cầu thông tin chi tiết hơn">
+                    <i class="fas fa-reply"></i>
+                </button>
+            `;
+
+            container.appendChild(actionsDiv);
+
+            actionsDiv.querySelector('.regenerate-btn').addEventListener('click', () => regenerateResponse(messageId));
+            actionsDiv.querySelector('.follow-up-btn').addEventListener('click', () => askFollowUp(messageId));
+
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'feedback-buttons';
+            feedbackDiv.innerHTML = `
+                <button class="feedback-btn" data-feedback="up" title="Hữu ích">
+                    <i class="fas fa-thumbs-up"></i>
+                </button>
+                <button class="feedback-btn" data-feedback="down" title="Chưa hữu ích">
+                    <i class="fas fa-thumbs-down"></i>
+                </button>
+            `;
+
+            feedbackDiv.querySelectorAll('.feedback-btn').forEach(btn => {
+                btn.addEventListener('click', () => handleFeedback(messageId, btn.dataset.feedback));
+            });
+
+            container.appendChild(feedbackDiv);
         }
 
-        function askFollowUp(messageId) {
-            const input = document.getElementById('user-input');
-            input.value = "Hãy cung cấp thêm thông tin chi tiết và đầy đủ hơn về nội dung trên";
-            input.focus();
-            input.setSelectionRange(input.value.length, input.value.length);
+        return container;
+    }
+
+    function loadChatHistory() {
+        const container = document.getElementById('chat-messages');
+        container.innerHTML = '';
+        
+        if (chatHistory.length === 0) {
+            const welcomeMessageId = Date.now().toString();
+            const messageElement = createMessageElement(false, WELCOME_MESSAGE, welcomeMessageId);
+            container.appendChild(messageElement);
+            
+            chatHistory.push({
+                id: welcomeMessageId,
+                role: 'assistant',
+                content: WELCOME_MESSAGE
+            });
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        } else {
+            chatHistory.forEach(msg => {
+                const messageElement = createMessageElement(msg.role === 'user', msg.content, msg.id);
+                container.appendChild(messageElement);
+            });
         }
+        container.scrollTop = container.scrollHeight;
+        updateMessageCounter();
+    }
 
-        function clearChat() {
-            if (confirm('Bạn có chắc muốn xóa toàn bộ cuộc trò chuyện không?')) {
-                chatHistory = [];
-                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                loadChatHistory(); // This will load the welcome message again
-            }
+    function clearChat() {
+        if (confirm('Bạn có chắc muốn xóa toàn bộ cuộc trò chuyện không?')) {
+            chatHistory = [];
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            loadChatHistory();
         }
+    }
 
-        async function checkConnection() {
-            const indicator = document.getElementById('status-indicator');
-            const statusText = document.getElementById('status-text');
-
-            try {
-                const response = await fetch(`${currentEndpoint}/v1/models`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    mode: 'cors'
-                });
-
-                const data = await response.json();
-
-                if (!data || !data.data) {
-                    throw new Error('Invalid API response format');
-                }
-
-                if (Array.isArray(data.data)) {
-                    availableModels = data.data;
-                    updateModelSelects();
-                }
-
-                isConnected = true;
-                indicator.className = 'status-indicator status-online';
-                statusText.textContent = 'Đã kết nối';
-                return data;
-
-            } catch (error) {
-                isConnected = false;
-                indicator.className = 'status-indicator status-offline';
-                statusText.textContent = `Lỗi kết nối: ${error.message}`;
-                console.error('Connection error:', error);
-                throw error;
-            }
-        }
-
-        function updateModelSelects() {
-            const modelSelect = document.getElementById('model-select');
-            modelSelect.innerHTML = availableModels
-                .map(model => `<option value="${model.id}" ${model.id === currentModel ? 'selected' : ''}>${model.id}</option>`)
-                .join('');
-        }
-
-        function handleModelChange(e) {
-            currentModel = e.target.value;
-        }
-
-        function handleTemperatureChange(e) {
-            document.getElementById('temperature-value').textContent = e.target.value;
-        }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
-
-        async function sendMessage() {
-            if (!isConnected) {
-                alert('Vui lòng kiểm tra kết nối đến API endpoint.');
-                return;
-            }
-
+    function restartChat() {
+        if (confirm('Bạn có muốn bắt đầu cuộc trò chuyện mới không?')) {
+            chatHistory = [];
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            loadChatHistory();
+            
+            // Re-enable input
             const inputField = document.getElementById('user-input');
             const sendButton = document.getElementById('send-btn');
-            const userText = inputField.value.trim();
+            inputField.disabled = false;
+            sendButton.disabled = false;
+            inputField.placeholder = 'Nhập câu hỏi của bạn...';
+            inputField.focus();
+        }
+    }
 
-            if (!userText) return;
-
-            try {
-                inputField.disabled = true;
-                sendButton.disabled = true;
-                sendButton.classList.add('loading');
-
-                const messageId = Date.now().toString();
-                const messageElement = createMessageElement(true, userText, messageId);
-                document.getElementById('chat-messages').appendChild(messageElement);
-
-                chatHistory.push({ 
-                    id: messageId,
-                    role: 'user', 
-                    content: userText 
-                });
-
-                const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    mode: 'cors',
-                    body: JSON.stringify({
-                        model: currentModel,
-                        messages: [
-                            {
-                                role: 'system',
-                                content: systemPrompt
-                            },
-                            ...chatHistory
-                        ],
-                        temperature: parseFloat(document.getElementById('temperature').value),
-                        max_tokens: parseInt(document.getElementById('max-tokens').value),
-                        stream: true
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-                }
-
-                const reader = response.body.getReader();
-                let botReply = '';
-                const botMessageId = Date.now().toString();
-                const botMessage = createMessageElement(false, '', botMessageId);
-                document.getElementById('chat-messages').appendChild(botMessage);
-                const botMessageContent = botMessage.querySelector('.message');
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = new TextDecoder().decode(value);
-                    const lines = chunk.split('\n');
-                    
-                    for (const line of lines) {
-                        if (line.trim() === '' || line.includes('[DONE]')) continue;
-                        
-                        try {
-                            const json = JSON.parse(line.replace(/^data: /, ''));
-                            const token = json.choices[0]?.delta?.content || '';
-                            
-                            if (token) {
-                                botReply += token;
-                                botMessageContent.textContent = botReply;
-                                document.getElementById('chat-messages').scrollTop = 
-                                    document.getElementById('chat-messages').scrollHeight;
-                            }
-                        } catch (e) {
-                            console.error('Error parsing streaming response:', e);
-                        }
-                    }
-                }
-
-                if (botReply.trim()) {
-                    chatHistory.push({ 
-                        id: botMessageId,
-                        role: 'assistant', 
-                        content: botReply 
-                    });
-                    
-                    if (chatHistory.length > 100) {
-                        chatHistory = chatHistory.slice(-100);
-                    }
-                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                }
-
-            } catch (error) {
-                console.error('Error in sendMessage:', error);
-                const errorMessage = createMessageElement(
-                    false, 
-                    `Lỗi: ${error.message}. Vui lòng thử lại.`, 
-                    Date.now().toString()
-                );
-                document.getElementById('chat-messages').appendChild(errorMessage);
-            } finally {
-                inputField.disabled = false;
-                sendButton.disabled = false;
-                sendButton.classList.remove('loading');
-                inputField.value = '';
-                inputField.focus();
-            }
+    async function handleFeedback(messageId, feedback) {
+        const container = document.querySelector(`[data-message-id="${messageId}"]`);
+        const buttons = container.querySelectorAll('.feedback-btn');
+        
+        const existingNotification = container.querySelector('.feedback-notification');
+        if (existingNotification) {
+            existingNotification.remove();
         }
 
+        buttons.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.feedback === feedback);
+        });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Phần code còn lại giữ nguyên...
-
-async function processStreamResponse(reader, botMessageContent) {
-    let botReply = '';
-    
-    try {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = new TextDecoder().decode(value);
-            const lines = chunk.split('\n');
+        const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
+        if (messageIndex !== -1) {
+            chatHistory[messageIndex].feedback = feedback;
             
-            for (const line of lines) {
-                const trimmedLine = line.trim();
-                if (trimmedLine === '' || trimmedLine.includes('[DONE]')) continue;
+            if (feedback === 'down') {
+                chatHistory[messageIndex].incorrect = true;
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+                await generateImprovedResponse(messageId, messageIndex);
+            } else if (feedback === 'up') {
+                const thankYouDiv = document.createElement('div');
+                thankYouDiv.className = 'feedback-notification thank-you';
+                thankYouDiv.innerHTML = '<i class="fas fa-heart"></i> Cảm ơn phản hồi của bạn!';
+                container.appendChild(thankYouDiv);
                 
-                try {
-                    // Kiểm tra event error
-                    if (trimmedLine.startsWith('event: error')) {
-                        console.error('Server sent error event:', trimmedLine);
-                        const errorMessage = trimmedLine.replace('event: error', '').trim();
-                        throw new Error(`Server error: ${errorMessage}`);
-                    }
-                    
-                    // Xử lý data stream
-                    if (trimmedLine.startsWith('data: ')) {
-                        const jsonStr = trimmedLine.replace('data: ', '');
-                        const json = JSON.parse(jsonStr);
-                        
-                        // Sử dụng optional chaining để tránh lỗi undefined
-                        const token = json?.choices?.[0]?.delta?.content || '';
-                        
-                        if (token) {
-                            botReply += token;
-                            botMessageContent.textContent = botReply;
-                            const chatMessages = document.getElementById('chat-messages');
-                            if (chatMessages) {
-                                chatMessages.scrollTop = chatMessages.scrollHeight;
-                            }
-                        }
-                    }
-                } catch (parseError) {
-                    console.error('Error processing stream line:', parseError, 'Line:', trimmedLine);
-                    // Không throw error ở đây để tiếp tục xử lý các line khác
-                }
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
             }
         }
-    } catch (streamError) {
-        console.error('Stream processing error:', streamError);
-        throw streamError;
-    }
-    
-    return botReply;
-}
-
-async function sendMessage() {
-    if (!isConnected) {
-        alert('Vui lòng kiểm tra kết nối đến API endpoint.');
-        return;
     }
 
-    const inputField = document.getElementById('user-input');
-    const sendButton = document.getElementById('send-btn');
-    const userText = inputField.value.trim();
+    function askFollowUp(messageId) {
+        const input = document.getElementById('user-input');
+        input.value = "Hãy cung cấp thêm thông tin chi tiết và đầy đủ hơn về nội dung trên";
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+    }
 
-    if (!userText) return;
+    async function checkConnection() {
+        const indicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
 
-    try {
-        inputField.disabled = true;
-        sendButton.disabled = true;
-        sendButton.classList.add('loading');
-
-        const messageId = Date.now().toString();
-        const messageElement = createMessageElement(true, userText, messageId);
-        document.getElementById('chat-messages').appendChild(messageElement);
-
-        chatHistory.push({ 
-            id: messageId,
-            role: 'user', 
-            content: userText 
-        });
-
-        const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
-            },
-            mode: 'cors',
-            body: JSON.stringify({
-                model: currentModel,
-                messages: [
-                    {
-                        role: 'system',
-                        content: systemPrompt
-                    },
-                    ...chatHistory
-                ],
-                temperature: parseFloat(document.getElementById('temperature').value),
-                max_tokens: parseInt(document.getElementById('max-tokens').value),
-                stream: true
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-        }
-
-        const botMessageId = Date.now().toString();
-        const botMessage = createMessageElement(false, '', botMessageId);
-        document.getElementById('chat-messages').appendChild(botMessage);
-        const botMessageContent = botMessage.querySelector('.message');
-
-        const botReply = await processStreamResponse(response.body.getReader(), botMessageContent);
-
-        if (botReply.trim()) {
-            chatHistory.push({ 
-                id: botMessageId,
-                role: 'assistant', 
-                content: botReply 
+        try {
+            const response = await fetch(`${currentEndpoint}/v1/models`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                mode: 'cors'
             });
-            
-            if (chatHistory.length > 100) {
-                chatHistory = chatHistory.slice(-100);
+
+            const data = await response.json();
+
+            if (!data || !data.data) {
+                throw new Error('Invalid API response format');
             }
-            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+
+            if (Array.isArray(data.data)) {
+                availableModels = data.data;
+                updateModelSelects();
+            }
+
+            isConnected = true;
+            indicator.className = 'status-indicator status-online';
+            statusText.textContent = 'Đã kết nối';
+            return data;
+
+        } catch (error) {
+            isConnected = false;
+            indicator.className = 'status-indicator status-offline';
+            statusText.textContent = `Lỗi kết nối: ${error.message}`;
+            console.error('Connection error:', error);
+            throw error;
         }
-
-    } catch (error) {
-        console.error('Error in sendMessage:', error);
-        const errorMessage = createMessageElement(
-            false, 
-            `Lỗi: ${error.message}. Vui lòng thử lại.`, 
-            Date.now().toString()
-        );
-        document.getElementById('chat-messages').appendChild(errorMessage);
-    } finally {
-        inputField.disabled = false;
-        sendButton.disabled = false;
-        sendButton.classList.remove('loading');
-        inputField.value = '';
-        inputField.focus();
     }
-}
 
-async function generateImprovedResponse(messageId, incorrectIndex) {
-    try {
-        const incorrectMessage = chatHistory[incorrectIndex];
-        const userMessage = chatHistory[incorrectIndex - 1];
+    function updateModelSelects() {
+        const modelSelect = document.getElementById('model-select');
+        modelSelect.innerHTML = availableModels
+            .map(model => `<option value="${model.id}" ${model.id === currentModel ? 'selected' : ''}>${model.id}</option>`)
+            .join('');
+    }
+function handleModelChange(e) {
+        currentModel = e.target.value;
+    }
 
-        const improvedSystemPrompt = `${systemPrompt}
+    function handleTemperatureChange(e) {
+        document.getElementById('temperature-value').textContent = e.target.value;
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage();
+        }
+    }
+
+    async function generateImprovedResponse(messageId, incorrectIndex) {
+        try {
+            const incorrectMessage = chatHistory[incorrectIndex];
+            const userMessage = chatHistory[incorrectIndex - 1];
+
+            const improvedSystemPrompt = `${systemPrompt}
 
 Lưu ý: Câu trả lời trước đã được đánh giá là chưa tốt. Đây là câu trả lời cần cải thiện:
 "${incorrectMessage.content}"
 
 Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn.`;
 
-        const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
-            },
-            mode: 'cors',
-            body: JSON.stringify({
-                model: currentModel,
-                messages: [
-                    {
-                        role: 'system',
-                        content: improvedSystemPrompt
-                    },
-                    userMessage,
-                ],
-                temperature: parseFloat(document.getElementById('temperature').value),
-                max_tokens: parseInt(document.getElementById('max-tokens').value),
-                stream: true
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-        }
-
-        const botMessageId = Date.now().toString();
-        const botMessage = createMessageElement(false, '', botMessageId);
-        
-        const improvedNote = document.createElement('div');
-        improvedNote.className = 'improved-note';
-        improvedNote.innerHTML = `<i class="fas fa-sync"></i> Câu trả lời đã được cải thiện dựa trên feedback`;
-        botMessage.insertBefore(improvedNote, botMessage.firstChild);
-        
-        const oldMessage = document.querySelector(`[data-message-id="${messageId}"]`);
-        if (oldMessage) {
-            oldMessage.replaceWith(botMessage);
-        }
-        
-        const botMessageContent = botMessage.querySelector('.message');
-        const botReply = await processStreamResponse(response.body.getReader(), botMessageContent);
-
-        if (botReply.trim()) {
-            chatHistory.push({ 
-                id: botMessageId,
-                role: 'assistant', 
-                content: botReply,
-                improvedFrom: messageId
+            const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                mode: 'cors',
+                body: JSON.stringify({
+                    model: currentModel,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: improvedSystemPrompt
+                        },
+                        userMessage,
+                    ],
+                    temperature: parseFloat(document.getElementById('temperature').value),
+                    max_tokens: parseInt(document.getElementById('max-tokens').value),
+                    stream: true
+                })
             });
-            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-        }
 
-    } catch (error) {
-        console.error('Error in generateImprovedResponse:', error);
-        const errorMessage = createMessageElement(
-            false, 
-            `Lỗi: Không thể tạo câu trả lời cải thiện. ${error.message}`, 
-            Date.now().toString()
-        );
-        const oldMessage = document.querySelector(`[data-message-id="${messageId}"]`);
-        if (oldMessage) {
-            oldMessage.replaceWith(errorMessage);
+            if (!response.ok) {
+                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+            }
+
+            const botMessageId = Date.now().toString();
+            const botMessage = createMessageElement(false, '', botMessageId);
+            
+            const improvedNote = document.createElement('div');
+            improvedNote.className = 'improved-note';
+            improvedNote.innerHTML = `<i class="fas fa-sync"></i> Câu trả lời đã được cải thiện dựa trên feedback`;
+            botMessage.insertBefore(improvedNote, botMessage.firstChild);
+            
+            const oldMessage = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (oldMessage) {
+                oldMessage.replaceWith(botMessage);
+            }
+            
+            const botMessageContent = botMessage.querySelector('.message');
+            const botReply = await processStreamResponse(response.body.getReader(), botMessageContent);
+
+            if (botReply.trim()) {
+                const improvedMessage = {
+                    id: botMessageId,
+                    role: 'assistant',
+                    content: botReply,
+                    improvedFrom: messageId
+                };
+                chatHistory[incorrectIndex] = improvedMessage;
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            }
+
+        } catch (error) {
+            console.error('Error in generateImprovedResponse:', error);
+            const errorMessage = createMessageElement(
+                false, 
+                `Lỗi: Không thể tạo câu trả lời cải thiện. ${error.message}`, 
+                Date.now().toString()
+            );
+            const oldMessage = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (oldMessage) {
+                oldMessage.replaceWith(errorMessage);
+            }
         }
     }
-}
 
-// Các hàm khác giữ nguyên...
+    async function regenerateResponse(messageId) {
+        const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
+        if (messageIndex === -1) return;
 
+        try {
+            const lastUserMessage = chatHistory[messageIndex - 1];
+            if (!lastUserMessage || lastUserMessage.role !== 'user') return;
 
+            chatHistory = chatHistory.slice(0, messageIndex);
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            
+            const noteDiv = document.createElement('div');
+            noteDiv.className = 'improved-note';
+            noteDiv.innerHTML = `<i class="fas fa-redo"></i> Đang tạo lại câu trả lời...`;
+            
+            const oldMessage = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (oldMessage) {
+                oldMessage.appendChild(noteDiv);
+            }
 
+            const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                mode: 'cors',
+                body: JSON.stringify({
+                    model: currentModel,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: systemPrompt
+                        },
+                        ...chatHistory
+                    ],
+                    temperature: parseFloat(document.getElementById('temperature').value),
+                    max_tokens: parseInt(document.getElementById('max-tokens').value),
+                    stream: true
+                })
+            });
 
+            if (!response.ok) {
+                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+            }
 
+            const botMessageId = Date.now().toString();
+            const botMessage = createMessageElement(false, '', botMessageId);
+            
+            if (oldMessage) {
+                oldMessage.replaceWith(botMessage);
+            }
+            
+            const botMessageContent = botMessage.querySelector('.message');
+            const botReply = await processStreamResponse(response.body.getReader(), botMessageContent);
 
+            if (botReply.trim()) {
+                chatHistory.push({ 
+                    id: botMessageId,
+                    role: 'assistant', 
+                    content: botReply 
+                });
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+                updateMessageCounter();
+            }
 
+        } catch (error) {
+            console.error('Error in regenerateResponse:', error);
+            const errorMessage = createMessageElement(
+                false, 
+                `Lỗi: Không thể tạo lại câu trả lời. ${error.message}`, 
+                Date.now().toString()
+            );
+            const oldMessage = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (oldMessage) {
+                oldMessage.replaceWith(errorMessage);
+            }
+        }
+    }
 
+    async function sendMessage() {
+        if (!isConnected) {
+            alert('Vui lòng kiểm tra kết nối đến API endpoint.');
+            return;
+        }
 
+        // Check message limit
+        if (chatHistory.length >= MAX_MESSAGES) {
+            alert('Bạn đã đạt giới hạn tin nhắn. Vui lòng bắt đầu cuộc trò chuyện mới.');
+            return;
+        }
 
-    </script>
+        const inputField = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-btn');
+        const userText = inputField.value.trim();
+
+        if (!userText) return;
+
+        try {
+            inputField.disabled = true;
+            sendButton.disabled = true;
+            sendButton.classList.add('loading');
+
+            const messageId = Date.now().toString();
+            const messageElement = createMessageElement(true, userText, messageId);
+            document.getElementById('chat-messages').appendChild(messageElement);
+
+            chatHistory.push({ 
+                id: messageId,
+                role: 'user', 
+                content: userText 
+            });
+
+            // Update counter before bot response
+            updateMessageCounter();
+
+            const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                mode: 'cors',
+                body: JSON.stringify({
+                    model: currentModel,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: systemPrompt
+                        },
+                        ...chatHistory
+                    ],
+                    temperature: parseFloat(document.getElementById('temperature').value),
+                    max_tokens: parseInt(document.getElementById('max-tokens').value),
+                    stream: true
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+            }
+
+            const botMessageId = Date.now().toString();
+            const botMessage = createMessageElement(false, '', botMessageId);
+            document.getElementById('chat-messages').appendChild(botMessage);
+            const botMessageContent = botMessage.querySelector('.message');
+
+            const botReply = await processStreamResponse(response.body.getReader(), botMessageContent);
+
+            if (botReply.trim()) {
+                chatHistory.push({ 
+                    id: botMessageId,
+                    role: 'assistant', 
+                    content: botReply 
+                });
+                
+                if (chatHistory.length > MAX_MESSAGES) {
+                    chatHistory = chatHistory.slice(-MAX_MESSAGES);
+                }
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+                updateMessageCounter();
+            }
+
+        } catch (error) {
+            console.error('Error in sendMessage:', error);
+            const errorMessage = createMessageElement(
+                false, 
+                `Lỗi: ${error.message}. Vui lòng thử lại.`, 
+                Date.now().toString()
+            );
+            document.getElementById('chat-messages').appendChild(errorMessage);
+        } finally {
+            inputField.disabled = false;
+            sendButton.disabled = false;
+            sendButton.classList.remove('loading');
+            inputField.value = '';
+            inputField.focus();
+        }
+    }
+</script>
 </body>
 </html>
