@@ -77,13 +77,17 @@
 
         /* Header Styles */
         .chat-header {
-            padding: 15px;
-            background: #fff;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+    padding: 15px;
+    padding-top: 50px; /* Thêm khoảng cách cho browser bar */
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center; 
+    gap: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
 
         .chat-header h2 {
             flex: 1;
@@ -96,7 +100,7 @@
 
         @media (max-width: 768px) {
             .chat-header {
-                padding: 10px;
+                padding-top: 60px; /* Tăng padding trên mobile */
             }
             .chat-header h2 {
                 font-size: 1rem;
