@@ -1152,56 +1152,6 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
 
 
 
-<script>
-    let lastHeight = 0;
-
-    function calculateTotalHeight() {
-        // Lấy các phần tử chính
-        const header = document.querySelector('.chat-header');
-        const messages = document.querySelector('.chat-messages');
-        const inputArea = document.querySelector('.input-area');
-        
-        // Tính tổng chiều cao của tất cả các phần
-        const headerHeight = header?.getBoundingClientRect().height || 0;
-        const messagesHeight = messages?.getBoundingClientRect().height || 0;
-        const inputHeight = inputArea?.getBoundingClientRect().height || 0;
-        
-        return headerHeight + messagesHeight + inputHeight;
-    }
-
-    function updateParentHeight() {
-        const totalHeight = calculateTotalHeight();
-        
-        // Chỉ gửi message khi có sự thay đổi thực sự
-        if (totalHeight !== lastHeight) {
-            lastHeight = totalHeight;
-            window.parent.postMessage({ height: totalHeight }, '*');
-            console.log('Updated height:', totalHeight); // Debug log
-        }
-    }
-
-    // Đảm bảo chạy sau khi DOM đã load hoàn toàn
-    window.addEventListener('load', () => {
-        // Cập nhật chiều cao ban đầu
-        setTimeout(updateParentHeight, 500);
-
-        // Theo dõi thay đổi trong chat messages
-        const messagesContainer = document.querySelector('.chat-messages');
-        if (messagesContainer) {
-            const observer = new MutationObserver(() => {
-                setTimeout(updateParentHeight, 100);
-            });
-
-            observer.observe(messagesContainer, {
-                childList: true,
-                subtree: true,
-                attributes: true
-            });
-        }
-    });
-</script>
-
-
 
 
 
