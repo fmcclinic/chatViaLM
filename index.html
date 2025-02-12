@@ -487,7 +487,11 @@
     let availableModels = [];
     let currentModel = 'vistral-7b-chat';
     let isConnected = false;
-    const HEARTBEAT_INTERVAL = 30000; // 30 giây
+
+// Thêm biến heartbeat
+let heartbeatInterval = null;
+const HEARTBEAT_INTERVAL = 30000; // 30 giây
+
     // Khởi tạo các hàm đọc cấu hình
     async function loadConfigurations() {
         try {
