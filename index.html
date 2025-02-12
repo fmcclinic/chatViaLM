@@ -1153,35 +1153,46 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
 
 
 
+
 <script>
     function updateParentHeight() {
-        // Lấy chiều cao của container chứa các tin nhắn chat
-        const chatContainer = document.querySelector('#messages-container'); // Thay id này bằng id thực tế của container chứa messages
-        const height = chatContainer ? chatContainer.scrollHeight : document.documentElement.scrollHeight;
-        window.parent.postMessage({ height: height }, '*');
+        // Lấy container chính 
+        const chatContainer = document.querySelector('.chat-container');
+        const messagesContainer = document.querySelector('.chat-messages');
+        
+        // Tính toán tổng chiều cao thực tế
+        const totalHeight = chatContainer ? chatContainer.scrollHeight : document.documentElement.scrollHeight;
+        
+        // Thêm buffer để tránh scroll
+        const heightWithBuffer = totalHeight + 20;
+        
+        // Gửi thông tin chiều cao mới lên parent
+        window.parent.postMessage({ height: heightWithBuffer }, '*');
     }
 
-    // Theo dõi DOM changes để cập nhật chiều cao
+    // Theo dõi DOM changes trong chat-messages
     const observer = new MutationObserver(() => {
-        setTimeout(updateParentHeight, 100); // Thêm delay nhỏ để đảm bảo content đã render
+        // Thêm delay nhỏ để đảm bảo content đã render xong
+        setTimeout(updateParentHeight, 100);
     });
 
-    // Bắt đầu theo dõi thay đổi trong container chứa messages
+    // Bắt đầu theo dõi khi DOM đã load
     document.addEventListener('DOMContentLoaded', () => {
-        const chatContainer = document.querySelector('#messages-container'); // Thay id này bằng id thực tế
-        if (chatContainer) {
-            observer.observe(chatContainer, {
-                childList: true, // theo dõi thêm/xóa nodes
-                subtree: true,   // theo dõi tất cả descendants
-                characterData: true, // theo dõi thay đổi text
-                attributes: true // theo dõi thay đổi attributes
+        const messagesContainer = document.querySelector('.chat-messages');
+        if (messagesContainer) {
+            observer.observe(messagesContainer, {
+                childList: true,    // theo dõi thêm/xóa message
+                subtree: true,      // theo dõi toàn bộ cây DOM con
+                characterData: true // theo dõi thay đổi nội dung
             });
         }
         updateParentHeight();
     });
 
-    // Vẫn giữ các listeners khác
+    // Cập nhật khi tất cả resources đã load
     window.addEventListener('load', updateParentHeight);
+
+    // Theo dõi thay đổi kích thước của body
     new ResizeObserver(updateParentHeight).observe(document.body);
 </script>
 
