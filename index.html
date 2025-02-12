@@ -1153,13 +1153,34 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
 
 
 
-
 <script>
     function updateParentHeight() {
-        const height = document.documentElement.scrollHeight;
+        // Lấy chiều cao của container chứa các tin nhắn chat
+        const chatContainer = document.querySelector('#messages-container'); // Thay id này bằng id thực tế của container chứa messages
+        const height = chatContainer ? chatContainer.scrollHeight : document.documentElement.scrollHeight;
         window.parent.postMessage({ height: height }, '*');
     }
-    document.addEventListener('DOMContentLoaded', updateParentHeight);
+
+    // Theo dõi DOM changes để cập nhật chiều cao
+    const observer = new MutationObserver(() => {
+        setTimeout(updateParentHeight, 100); // Thêm delay nhỏ để đảm bảo content đã render
+    });
+
+    // Bắt đầu theo dõi thay đổi trong container chứa messages
+    document.addEventListener('DOMContentLoaded', () => {
+        const chatContainer = document.querySelector('#messages-container'); // Thay id này bằng id thực tế
+        if (chatContainer) {
+            observer.observe(chatContainer, {
+                childList: true, // theo dõi thêm/xóa nodes
+                subtree: true,   // theo dõi tất cả descendants
+                characterData: true, // theo dõi thay đổi text
+                attributes: true // theo dõi thay đổi attributes
+            });
+        }
+        updateParentHeight();
+    });
+
+    // Vẫn giữ các listeners khác
     window.addEventListener('load', updateParentHeight);
     new ResizeObserver(updateParentHeight).observe(document.body);
 </script>
