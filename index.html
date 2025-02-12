@@ -1151,6 +1151,7 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
 </script>
 
 
+
 <script>
     let lastHeight = 0;
 
@@ -1201,7 +1202,61 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
 </script>
 
 
+<script>
+    let lastHeight = 0;
 
+    function calculateTotalHeight() {
+        // Kiểm tra xem có tin nhắn chào mừng không
+        const welcomeMsg = document.querySelector('.bot-message');
+        const warningMsg = document.querySelector('.warning-message');
+        const feedbackButtons = document.querySelector('.feedback-buttons');
+        const chatContainer = document.querySelector('.chat-container');
+        
+        // Log ra để debug
+        console.log('Welcome height:', welcomeMsg?.offsetHeight);
+        console.log('Warning height:', warningMsg?.offsetHeight);
+        console.log('Feedback height:', feedbackButtons?.offsetHeight);
+        console.log('Container height:', chatContainer?.offsetHeight);
+        
+        // Lấy chiều cao lớn nhất có thể
+        const totalHeight = Math.max(
+            document.documentElement.scrollHeight,
+            chatContainer?.offsetHeight || 0,
+            welcomeMsg ? (welcomeMsg.offsetHeight + warningMsg?.offsetHeight + feedbackButtons?.offsetHeight + 100) : 0
+        );
+
+        console.log('Calculated total height:', totalHeight);
+        return totalHeight;
+    }
+
+    function updateParentHeight() {
+        const newHeight = calculateTotalHeight();
+        
+        if (newHeight !== lastHeight && newHeight > 200) { // Đảm bảo chiều cao tối thiểu
+            lastHeight = newHeight;
+            window.parent.postMessage({ height: newHeight }, '*');
+            console.log('Sent new height:', newHeight);
+        }
+    }
+
+    // Chạy nhiều lần trong khoảng thời gian đầu để đảm bảo bắt được chiều cao đúng
+    window.addEventListener('load', () => {
+        [0, 100, 300, 500, 1000].forEach(delay => {
+            setTimeout(updateParentHeight, delay);
+        });
+
+        const messagesContainer = document.querySelector('.chat-messages');
+        if (messagesContainer) {
+            new MutationObserver(() => {
+                setTimeout(updateParentHeight, 100);
+            }).observe(messagesContainer, {
+                childList: true,
+                subtree: true,
+                attributes: true
+            });
+        }
+    });
+</script>
 
 
 </body>
