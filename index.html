@@ -419,19 +419,6 @@
 
 
 
-.chat-container {
-    min-height: 500px !important; /* Force minimum height */
-}
-.chat-messages {
-    min-height: 350px !important; /* Ensure messages area has minimum height */
-}
-
-
-
-
-
-
-
 
 
     </style>
@@ -1173,29 +1160,95 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
 
 
 <script>
-    function sendHeight() {
+    function logComponentHeights() {
+        // Log chiều cao các thành phần chính
+        const chatContainer = document.querySelector('.chat-container');
+        const header = document.querySelector('.chat-header');
+        const messages = document.querySelector('.chat-messages');
+        const inputArea = document.querySelector('.input-area');
+        const welcomeMessage = document.querySelector('.bot-message');
+        const warningMessage = document.querySelector('.warning-message');
+
+        console.log('=== Component Heights ===');
+        console.log('Chat Container:', {
+            scrollHeight: chatContainer?.scrollHeight,
+            offsetHeight: chatContainer?.offsetHeight,
+            clientHeight: chatContainer?.clientHeight
+        });
+        
+        console.log('Header:', {
+            scrollHeight: header?.scrollHeight,
+            offsetHeight: header?.offsetHeight,
+            clientHeight: header?.clientHeight
+        });
+
+        console.log('Messages Container:', {
+            scrollHeight: messages?.scrollHeight,
+            offsetHeight: messages?.offsetHeight,
+            clientHeight: messages?.clientHeight
+        });
+
+        console.log('Welcome Message:', {
+            scrollHeight: welcomeMessage?.scrollHeight,
+            offsetHeight: welcomeMessage?.offsetHeight,
+            clientHeight: welcomeMessage?.clientHeight
+        });
+
+        console.log('Warning Message:', {
+            scrollHeight: warningMessage?.scrollHeight,
+            offsetHeight: warningMessage?.offsetHeight,
+            clientHeight: warningMessage?.clientHeight
+        });
+
+        console.log('Input Area:', {
+            scrollHeight: inputArea?.scrollHeight,
+            offsetHeight: inputArea?.offsetHeight,
+            clientHeight: inputArea?.clientHeight
+        });
+
+        console.log('Document:', {
+            scrollHeight: document.documentElement.scrollHeight,
+            offsetHeight: document.documentElement.offsetHeight,
+            clientHeight: document.documentElement.clientHeight
+        });
+
+        // Tính toàn bộ chiều cao
+        const totalHeight = Math.max(
+            chatContainer?.scrollHeight || 0,
+            (header?.offsetHeight || 0) + 
+            (messages?.scrollHeight || 0) + 
+            (inputArea?.offsetHeight || 0)
+        );
+
+        console.log('Calculated Total Height:', totalHeight);
+        return totalHeight;
+    }
+
+    // Theo dõi và cập nhật chiều cao
+    function updateParentHeight() {
         // Force reflow
         document.body.offsetHeight;
         
-        const chatContainer = document.querySelector('.chat-container');
-        const height = Math.max(
-            document.body.scrollHeight,
-            document.documentElement.scrollHeight,
-            chatContainer?.offsetHeight || 500
-        );
-        
-        window.parent.postMessage({ height: height }, '*');
-        console.log('Height sent:', height);
+        const height = logComponentHeights();
+        if (height > 0) {
+            window.parent.postMessage({ height: height }, '*');
+            console.log('Height sent to parent:', height);
+        }
     }
 
-    // Gửi chiều cao ban đầu sau khi content đã load
+    // Chạy sau khi tải xong
     window.addEventListener('load', () => {
-        setTimeout(sendHeight, 100);
-        
-        // Theo dõi thay đổi trong chat
+        // Chạy nhiều lần trong giây đầu tiên
+        [0, 100, 500, 1000].forEach(delay => {
+            setTimeout(updateParentHeight, delay);
+        });
+
+        // Theo dõi thay đổi
         const messages = document.querySelector('.chat-messages');
         if (messages) {
-            new MutationObserver(sendHeight).observe(messages, {
+            new MutationObserver(() => {
+                setTimeout(updateParentHeight, 100);
+            }).observe(messages, {
                 childList: true,
                 subtree: true
             });
