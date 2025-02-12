@@ -621,43 +621,30 @@ const RETRY_DELAY = 1000;
 async function processStreamResponse(reader, botMessageContent) {
     let botReply = '';
     const decoder = new TextDecoder();
-    let buffer = ''; // Buffer để xử lý chunks không hoàn chỉnh
+    let buffer = '';
 
     try {
         while (true) {
             const { done, value } = await reader.read();
-            
-            if (done) {
-                // Xử lý buffer còn lại nếu có
-                if (buffer) {
-                    try {
-                        const json = JSON.parse(buffer.replace('data: ', ''));
-                        const token = json?.choices?.[0]?.delta?.content;
-                        if (token) {
-                            botReply += token;
-                            botMessageContent.textContent = botReply;
-                        }
-                    } catch (e) {
-                        console.warn('Buffer parsing error:', e);
-                    }
-                }
-                break;
-            }
+            if (done) break;
 
-            // Thêm chunk mới vào buffer
-            buffer += decoder.decode(value, {stream: true});
-            
-            // Tìm và xử lý từng dòng hoàn chỉnh
+            buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
-            buffer = lines.pop() || ''; // Giữ lại phần chưa hoàn chỉnh
+            buffer = lines.pop() || '';
 
             for (const line of lines) {
                 const trimmedLine = line.trim();
-                if (!trimmedLine || trimmedLine === '[DONE]') continue;
-
-                try {
-                    if (trimmedLine.startsWith('data: ')) {
+                
+                // Skip empty lines and [DONE] marker
+                if (!trimmedLine || trimmedLine === 'data: [DONE]') continue;
+                
+                // Process only data lines
+                if (trimmedLine.startsWith('data: ')) {
+                    try {
                         const jsonStr = trimmedLine.replace('data: ', '');
+                        // Skip if string is empty after removing 'data: '
+                        if (!jsonStr.trim()) continue;
+                        
                         const json = JSON.parse(jsonStr);
                         const token = json?.choices?.[0]?.delta?.content;
                         
@@ -670,15 +657,15 @@ async function processStreamResponse(reader, botMessageContent) {
                                 behavior: 'smooth'
                             });
                         }
+                    } catch (e) {
+                        // Log parse error but continue processing
+                        console.debug('Parse error for line:', trimmedLine, e);
                     }
-                } catch (e) {
-                    console.warn('Line parsing error:', trimmedLine, e);
                 }
             }
         }
     } catch (error) {
         console.error('Stream processing error:', error);
-        // Thêm thông báo lỗi vào UI
         botMessageContent.textContent = 'Có lỗi xảy ra trong quá trình xử lý. Vui lòng thử lại.';
         throw error;
     }
