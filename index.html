@@ -1158,82 +1158,59 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
 
 
 
-
 <script>
-    function logComponentHeights() {
-        const chatContainer = document.querySelector('.chat-container');
-        const header = document.querySelector('.chat-header');
-        const messages = document.querySelector('.chat-messages');
-        const inputArea = document.querySelector('.input-area');
-        const welcomeMessage = document.querySelector('.bot-message');
-        const warningMessage = document.querySelector('.warning-message');
+   function calculateHeight() {
+       const chatContainer = document.querySelector('.chat-container');
+       const header = document.querySelector('.chat-header');
+       const messages = document.querySelector('.chat-messages');
+       const inputArea = document.querySelector('.input-area');
 
-        console.log('=== Component Heights ===');
-        console.log('Chat Container:', {
-            scrollHeight: chatContainer?.scrollHeight,
-            offsetHeight: chatContainer?.offsetHeight,
-            clientHeight: chatContainer?.clientHeight
-        });
-        
-        // ... (các log khác giữ nguyên)
+       const totalHeight = Math.max(
+           chatContainer?.scrollHeight || 0,
+           (header?.offsetHeight || 0) + 
+           (messages?.scrollHeight || 0) + 
+           (inputArea?.offsetHeight || 0)
+       );
 
-        // Tính toán chiều cao dựa trên nội dung thực tế
-        const totalHeight = Math.max(
-            chatContainer?.scrollHeight || 0,
-            (header?.offsetHeight || 0) + 
-            (messages?.scrollHeight || 0) + 
-            (inputArea?.offsetHeight || 0)
-        );
+       return totalHeight;
+   }
 
-        console.log('Calculated Total Height:', totalHeight);
-        return totalHeight;
-    }
+   function updateParentHeight() {
+       document.body.offsetHeight;
+       const height = calculateHeight();
+       if (height > 0) {
+           window.parent.postMessage({ height: height }, '*');
+       }
+   }
 
-    function updateParentHeight() {
-        document.body.offsetHeight; // Force reflow
-        const height = logComponentHeights();
-        if (height > 0) {
-            window.parent.postMessage({ height: height }, '*');
-            console.log('Height sent to parent:', height);
-        }
-    }
+   document.getElementById('restart-chat-btn')?.addEventListener('click', () => {
+       setTimeout(updateParentHeight, 100);
+   });
 
-    // Theo dõi nút restart
-    document.getElementById('restart-chat-btn')?.addEventListener('click', () => {
-        // Đợi một chút để DOM cập nhật sau khi restart
-        setTimeout(() => {
-            updateParentHeight();
-            console.log('Height updated after restart');
-        }, 100);
-    });
+   window.addEventListener('load', () => {
+       [0, 100, 500, 1000].forEach(delay => {
+           setTimeout(updateParentHeight, delay);
+       });
 
-    // Khởi tạo theo dõi
-    window.addEventListener('load', () => {
-        [0, 100, 500, 1000].forEach(delay => {
-            setTimeout(updateParentHeight, delay);
-        });
-
-        const messages = document.querySelector('.chat-messages');
-        if (messages) {
-            new MutationObserver((mutations) => {
-                // Kiểm tra xem có phải là thay đổi do restart không
-                const isRestart = mutations.some(mutation => 
-                    mutation.type === 'childList' && 
-                    mutation.removedNodes.length > 0
-                );
-                
-                if (isRestart) {
-                    console.log('Restart detected');
-                    updateParentHeight();
-                } else {
-                    setTimeout(updateParentHeight, 100);
-                }
-            }).observe(messages, {
-                childList: true,
-                subtree: true
-            });
-        }
-    });
+       const messages = document.querySelector('.chat-messages');
+       if (messages) {
+           new MutationObserver((mutations) => {
+               const isRestart = mutations.some(mutation => 
+                   mutation.type === 'childList' && 
+                   mutation.removedNodes.length > 0
+               );
+               
+               if (isRestart) {
+                   updateParentHeight();
+               } else {
+                   setTimeout(updateParentHeight, 100);
+               }
+           }).observe(messages, {
+               childList: true,
+               subtree: true
+           });
+       }
+   });
 </script>
 
 
