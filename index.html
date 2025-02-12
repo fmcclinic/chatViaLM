@@ -1202,59 +1202,76 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
 </script>
 
 
+
+
+
+
 <script>
     let lastHeight = 0;
 
-    function calculateTotalHeight() {
-        // Kiểm tra xem có tin nhắn chào mừng không
-        const welcomeMsg = document.querySelector('.bot-message');
-        const warningMsg = document.querySelector('.warning-message');
-        const feedbackButtons = document.querySelector('.feedback-buttons');
-        const chatContainer = document.querySelector('.chat-container');
-        
-        // Log ra để debug
-        console.log('Welcome height:', welcomeMsg?.offsetHeight);
-        console.log('Warning height:', warningMsg?.offsetHeight);
-        console.log('Feedback height:', feedbackButtons?.offsetHeight);
-        console.log('Container height:', chatContainer?.offsetHeight);
-        
-        // Lấy chiều cao lớn nhất có thể
-        const totalHeight = Math.max(
-            document.documentElement.scrollHeight,
-            chatContainer?.offsetHeight || 0,
-            welcomeMsg ? (welcomeMsg.offsetHeight + warningMsg?.offsetHeight + feedbackButtons?.offsetHeight + 100) : 0
-        );
+    function forceCalculateHeight() {
+        // Đợi render hoàn tất
+        requestAnimationFrame(() => {
+            // Lấy toàn bộ nội dung
+            const body = document.body;
+            const html = document.documentElement;
+            
+            // Tính chiều cao tối đa
+            const height = Math.max(
+                body.scrollHeight,
+                body.offsetHeight,
+                html.clientHeight,
+                html.scrollHeight,
+                html.offsetHeight
+            );
 
-        console.log('Calculated total height:', totalHeight);
-        return totalHeight;
-    }
+            // Debug logs
+            console.log('Body scrollHeight:', body.scrollHeight);
+            console.log('Body offsetHeight:', body.offsetHeight);
+            console.log('HTML clientHeight:', html.clientHeight);
+            console.log('HTML scrollHeight:', html.scrollHeight);
+            console.log('HTML offsetHeight:', html.offsetHeight);
+            console.log('Final calculated height:', height);
 
-    function updateParentHeight() {
-        const newHeight = calculateTotalHeight();
-        
-        if (newHeight !== lastHeight && newHeight > 200) { // Đảm bảo chiều cao tối thiểu
-            lastHeight = newHeight;
-            window.parent.postMessage({ height: newHeight }, '*');
-            console.log('Sent new height:', newHeight);
-        }
-    }
-
-    // Chạy nhiều lần trong khoảng thời gian đầu để đảm bảo bắt được chiều cao đúng
-    window.addEventListener('load', () => {
-        [0, 100, 300, 500, 1000].forEach(delay => {
-            setTimeout(updateParentHeight, delay);
+            // Chỉ gửi nếu có thay đổi đáng kể
+            if (Math.abs(height - lastHeight) > 10) {
+                lastHeight = height;
+                window.parent.postMessage({ height: height }, '*');
+            }
         });
+    }
 
+    // Khởi tạo sau khi DOM và styles đã load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            // Thực hiện nhiều lần trong 2 giây đầu
+            [0, 100, 300, 500, 1000, 1500, 2000].forEach(delay => {
+                setTimeout(forceCalculateHeight, delay);
+            });
+        });
+    } else {
+        [0, 100, 300, 500, 1000, 1500, 2000].forEach(delay => {
+            setTimeout(forceCalculateHeight, delay);
+        });
+    }
+
+    // Theo dõi thay đổi trong chat
+    window.addEventListener('load', () => {
         const messagesContainer = document.querySelector('.chat-messages');
         if (messagesContainer) {
-            new MutationObserver(() => {
-                setTimeout(updateParentHeight, 100);
-            }).observe(messagesContainer, {
-                childList: true,
-                subtree: true,
-                attributes: true
-            });
+            new MutationObserver(forceCalculateHeight)
+                .observe(messagesContainer, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    characterData: true
+                });
         }
+    });
+
+    // Đảm bảo styles đã được áp dụng
+    window.addEventListener('load', () => {
+        setTimeout(forceCalculateHeight, 0);
     });
 </script>
 
