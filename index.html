@@ -1149,5 +1149,24 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
         }
     }
 </script>
+
+
+
+
+
+<script>
+    function updateParentHeight() {
+        const height = document.documentElement.scrollHeight;
+        window.parent.postMessage({ height: height }, '*');
+    }
+    document.addEventListener('DOMContentLoaded', updateParentHeight);
+    window.addEventListener('load', updateParentHeight);
+    new ResizeObserver(updateParentHeight).observe(document.body);
+</script>
+
+
+
+
+
 </body>
 </html>
