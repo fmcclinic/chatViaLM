@@ -416,6 +416,24 @@
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+
+
+.chat-container {
+    min-height: 500px !important; /* Force minimum height */
+}
+.chat-messages {
+    min-height: 350px !important; /* Ensure messages area has minimum height */
+}
+
+
+
+
+
+
+
+
+
     </style>
 </head>
 <body>
@@ -1155,46 +1173,33 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
 
 
 <script>
-    function updateParentHeight() {
+    function sendHeight() {
         // Force reflow
         document.body.offsetHeight;
         
-        // Calculate complete document height
+        const chatContainer = document.querySelector('.chat-container');
         const height = Math.max(
             document.body.scrollHeight,
-            document.documentElement.scrollHeight
+            document.documentElement.scrollHeight,
+            chatContainer?.offsetHeight || 500
         );
-
-        // Send message to parent
-        if (height > 300) { // Đảm bảo chiều cao tối thiểu cho welcome message
-            window.parent.postMessage({ height: height }, '*');
-            console.log('Sent height:', height);
-        }
+        
+        window.parent.postMessage({ height: height }, '*');
+        console.log('Height sent:', height);
     }
 
-    // Initial load
-    document.addEventListener('DOMContentLoaded', () => {
-        // Run multiple times in first few seconds
-        [100, 500, 1000].forEach(delay => {
-            setTimeout(updateParentHeight, delay);
-        });
-    });
-
-    // Watch for changes
-    const observer = new MutationObserver(() => {
-        setTimeout(updateParentHeight, 100);
-    });
-
-    // Start observing after load
+    // Gửi chiều cao ban đầu sau khi content đã load
     window.addEventListener('load', () => {
+        setTimeout(sendHeight, 100);
+        
+        // Theo dõi thay đổi trong chat
         const messages = document.querySelector('.chat-messages');
         if (messages) {
-            observer.observe(messages, {
+            new MutationObserver(sendHeight).observe(messages, {
                 childList: true,
                 subtree: true
             });
         }
-        updateParentHeight();
     });
 </script>
 
