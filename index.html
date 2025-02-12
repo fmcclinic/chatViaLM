@@ -1151,64 +1151,53 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
 </script>
 
 
-
-
-
 <script>
     let lastHeight = 0;
-    let updateTimeout = null;
+
+    function calculateTotalHeight() {
+        // Lấy các phần tử chính
+        const header = document.querySelector('.chat-header');
+        const messages = document.querySelector('.chat-messages');
+        const inputArea = document.querySelector('.input-area');
+        
+        // Tính tổng chiều cao của tất cả các phần
+        const headerHeight = header?.getBoundingClientRect().height || 0;
+        const messagesHeight = messages?.getBoundingClientRect().height || 0;
+        const inputHeight = inputArea?.getBoundingClientRect().height || 0;
+        
+        return headerHeight + messagesHeight + inputHeight;
+    }
 
     function updateParentHeight() {
-        if (updateTimeout) {
-            clearTimeout(updateTimeout);
+        const totalHeight = calculateTotalHeight();
+        
+        // Chỉ gửi message khi có sự thay đổi thực sự
+        if (totalHeight !== lastHeight) {
+            lastHeight = totalHeight;
+            window.parent.postMessage({ height: totalHeight }, '*');
+            console.log('Updated height:', totalHeight); // Debug log
         }
-
-        updateTimeout = setTimeout(() => {
-            // Lấy chiều cao thực của chat container và welcome message
-            const chatContainer = document.querySelector('.chat-container');
-            const messagesContainer = document.querySelector('.chat-messages');
-            const welcomeMessage = messagesContainer?.querySelector('.bot-message');
-            
-            // Tính toàn bộ chiều cao cần thiết
-            let totalHeight = chatContainer?.scrollHeight || document.documentElement.scrollHeight;
-            
-            // Đảm bảo tính cả chiều cao của welcome message
-            if (welcomeMessage && !lastHeight) {
-                totalHeight = Math.max(totalHeight, welcomeMessage.offsetHeight + 100); // thêm padding
-            }
-
-            // Chỉ update nếu chiều cao thay đổi đáng kể hoặc là lần đầu tiên
-            if (!lastHeight || Math.abs(totalHeight - lastHeight) > 10) {
-                lastHeight = totalHeight;
-                window.parent.postMessage({ height: totalHeight }, '*');
-            }
-            updateTimeout = null;
-        }, 100);
     }
 
-    // Khởi tạo ngay khi có thể
-    if (document.readyState === "loading") {
-        document.addEventListener('DOMContentLoaded', initializeHeightTracking);
-    } else {
-        initializeHeightTracking();
-    }
+    // Đảm bảo chạy sau khi DOM đã load hoàn toàn
+    window.addEventListener('load', () => {
+        // Cập nhật chiều cao ban đầu
+        setTimeout(updateParentHeight, 500);
 
-    function initializeHeightTracking() {
-        // Update ngay lập tức cho welcome message
-        updateParentHeight();
-
-        // Theo dõi thay đổi trong chat
+        // Theo dõi thay đổi trong chat messages
         const messagesContainer = document.querySelector('.chat-messages');
         if (messagesContainer) {
-            new MutationObserver(updateParentHeight).observe(messagesContainer, {
+            const observer = new MutationObserver(() => {
+                setTimeout(updateParentHeight, 100);
+            });
+
+            observer.observe(messagesContainer, {
                 childList: true,
-                subtree: true
+                subtree: true,
+                attributes: true
             });
         }
-    }
-
-    // Cập nhật lại sau khi tất cả resources đã load
-    window.addEventListener('load', updateParentHeight);
+    });
 </script>
 
 
