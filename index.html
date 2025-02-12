@@ -1155,46 +1155,59 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
 
 
 <script>
-    let lastHeight = 0; // Biến để theo dõi chiều cao trước đó
-    let updateTimeout = null; // Biến để throttle updates
+    let lastHeight = 0;
+    let updateTimeout = null;
 
     function updateParentHeight() {
-        // Hủy timeout trước đó nếu có
         if (updateTimeout) {
             clearTimeout(updateTimeout);
         }
 
         updateTimeout = setTimeout(() => {
+            // Lấy chiều cao thực của chat container và welcome message
             const chatContainer = document.querySelector('.chat-container');
-            const currentHeight = chatContainer ? chatContainer.scrollHeight : document.documentElement.scrollHeight;
+            const messagesContainer = document.querySelector('.chat-messages');
+            const welcomeMessage = messagesContainer?.querySelector('.bot-message');
+            
+            // Tính toàn bộ chiều cao cần thiết
+            let totalHeight = chatContainer?.scrollHeight || document.documentElement.scrollHeight;
+            
+            // Đảm bảo tính cả chiều cao của welcome message
+            if (welcomeMessage && !lastHeight) {
+                totalHeight = Math.max(totalHeight, welcomeMessage.offsetHeight + 100); // thêm padding
+            }
 
-            // Chỉ update nếu chiều cao thay đổi đáng kể (>10px)
-            if (Math.abs(currentHeight - lastHeight) > 10) {
-                lastHeight = currentHeight;
-                window.parent.postMessage({ height: currentHeight }, '*');
+            // Chỉ update nếu chiều cao thay đổi đáng kể hoặc là lần đầu tiên
+            if (!lastHeight || Math.abs(totalHeight - lastHeight) > 10) {
+                lastHeight = totalHeight;
+                window.parent.postMessage({ height: totalHeight }, '*');
             }
             updateTimeout = null;
         }, 100);
     }
 
-    // Theo dõi thay đổi trong chat-messages
-    const observer = new MutationObserver(() => {
-        updateParentHeight();
-    });
+    // Khởi tạo ngay khi có thể
+    if (document.readyState === "loading") {
+        document.addEventListener('DOMContentLoaded', initializeHeightTracking);
+    } else {
+        initializeHeightTracking();
+    }
 
-    // Khởi tạo khi DOM đã load
-    document.addEventListener('DOMContentLoaded', () => {
+    function initializeHeightTracking() {
+        // Update ngay lập tức cho welcome message
+        updateParentHeight();
+
+        // Theo dõi thay đổi trong chat
         const messagesContainer = document.querySelector('.chat-messages');
         if (messagesContainer) {
-            observer.observe(messagesContainer, {
+            new MutationObserver(updateParentHeight).observe(messagesContainer, {
                 childList: true,
                 subtree: true
             });
         }
-        updateParentHeight();
-    });
+    }
 
-    // Cập nhật khi load xong
+    // Cập nhật lại sau khi tất cả resources đã load
     window.addEventListener('load', updateParentHeight);
 </script>
 
