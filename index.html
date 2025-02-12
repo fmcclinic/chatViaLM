@@ -1155,45 +1155,47 @@ Hãy đưa ra câu trả lời mới tốt hơn, chi tiết và chính xác hơn
 
 
 <script>
+    let lastHeight = 0; // Biến để theo dõi chiều cao trước đó
+    let updateTimeout = null; // Biến để throttle updates
+
     function updateParentHeight() {
-        // Lấy container chính 
-        const chatContainer = document.querySelector('.chat-container');
-        const messagesContainer = document.querySelector('.chat-messages');
-        
-        // Tính toán tổng chiều cao thực tế
-        const totalHeight = chatContainer ? chatContainer.scrollHeight : document.documentElement.scrollHeight;
-        
-        // Thêm buffer để tránh scroll
-        const heightWithBuffer = totalHeight + 20;
-        
-        // Gửi thông tin chiều cao mới lên parent
-        window.parent.postMessage({ height: heightWithBuffer }, '*');
+        // Hủy timeout trước đó nếu có
+        if (updateTimeout) {
+            clearTimeout(updateTimeout);
+        }
+
+        updateTimeout = setTimeout(() => {
+            const chatContainer = document.querySelector('.chat-container');
+            const currentHeight = chatContainer ? chatContainer.scrollHeight : document.documentElement.scrollHeight;
+
+            // Chỉ update nếu chiều cao thay đổi đáng kể (>10px)
+            if (Math.abs(currentHeight - lastHeight) > 10) {
+                lastHeight = currentHeight;
+                window.parent.postMessage({ height: currentHeight }, '*');
+            }
+            updateTimeout = null;
+        }, 100);
     }
 
-    // Theo dõi DOM changes trong chat-messages
+    // Theo dõi thay đổi trong chat-messages
     const observer = new MutationObserver(() => {
-        // Thêm delay nhỏ để đảm bảo content đã render xong
-        setTimeout(updateParentHeight, 100);
+        updateParentHeight();
     });
 
-    // Bắt đầu theo dõi khi DOM đã load
+    // Khởi tạo khi DOM đã load
     document.addEventListener('DOMContentLoaded', () => {
         const messagesContainer = document.querySelector('.chat-messages');
         if (messagesContainer) {
             observer.observe(messagesContainer, {
-                childList: true,    // theo dõi thêm/xóa message
-                subtree: true,      // theo dõi toàn bộ cây DOM con
-                characterData: true // theo dõi thay đổi nội dung
+                childList: true,
+                subtree: true
             });
         }
         updateParentHeight();
     });
 
-    // Cập nhật khi tất cả resources đã load
+    // Cập nhật khi load xong
     window.addEventListener('load', updateParentHeight);
-
-    // Theo dõi thay đổi kích thước của body
-    new ResizeObserver(updateParentHeight).observe(document.body);
 </script>
 
 
