@@ -613,55 +613,71 @@ Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ tr
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 
-async function processStreamResponse(reader, botMessageContent, retryCount = 0) {
+async function processStreamResponse(reader, botMessageContent) {
     let botReply = '';
-    
+    const decoder = new TextDecoder();
+    let buffer = ''; // Buffer để xử lý chunks không hoàn chỉnh
+
     try {
         while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = new TextDecoder().decode(value);
-            const lines = chunk.split('\n');
             
-            for (const line of lines) {
-                if (!line.trim() || line.includes('[DONE]')) continue;
-                
-                try {
-                    if (line.startsWith('event: error')) {
-                        throw new Error(line.replace('event: error', '').trim());
+            if (done) {
+                // Xử lý buffer còn lại nếu có
+                if (buffer) {
+                    try {
+                        const json = JSON.parse(buffer.replace('data: ', ''));
+                        const token = json?.choices?.[0]?.delta?.content;
+                        if (token) {
+                            botReply += token;
+                            botMessageContent.textContent = botReply;
+                        }
+                    } catch (e) {
+                        console.warn('Buffer parsing error:', e);
                     }
-                    
-                    if (line.startsWith('data: ')) {
-                        const json = JSON.parse(line.replace('data: ', ''));
-                        const token = json?.choices?.[0]?.delta?.content || '';
+                }
+                break;
+            }
+
+            // Thêm chunk mới vào buffer
+            buffer += decoder.decode(value, {stream: true});
+            
+            // Tìm và xử lý từng dòng hoàn chỉnh
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // Giữ lại phần chưa hoàn chỉnh
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine || trimmedLine === '[DONE]') continue;
+
+                try {
+                    if (trimmedLine.startsWith('data: ')) {
+                        const jsonStr = trimmedLine.replace('data: ', '');
+                        const json = JSON.parse(jsonStr);
+                        const token = json?.choices?.[0]?.delta?.content;
                         
                         if (token) {
                             botReply += token;
                             botMessageContent.textContent = botReply;
-                            scrollToBottom();
+                            const chatMessages = document.getElementById('chat-messages');
+                            chatMessages?.scrollTo({
+                                top: chatMessages.scrollHeight,
+                                behavior: 'smooth'
+                            });
                         }
                     }
-                } catch (error) {
-                    if (retryCount < MAX_RETRIES) {
-                        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-                        return processStreamResponse(reader, botMessageContent, retryCount + 1);
-                    }
-                    throw error;
+                } catch (e) {
+                    console.warn('Line parsing error:', trimmedLine, e);
                 }
             }
         }
     } catch (error) {
-        console.error('Stream error:', error);
-        botMessageContent.textContent = `Error: ${error.message}. Retrying...`;
-        
-        if (retryCount < MAX_RETRIES) {
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-            return processStreamResponse(reader, botMessageContent, retryCount + 1);
-        }
+        console.error('Stream processing error:', error);
+        // Thêm thông báo lỗi vào UI
+        botMessageContent.textContent = 'Có lỗi xảy ra trong quá trình xử lý. Vui lòng thử lại.';
         throw error;
     }
-    
+
     return botReply;
 }
 
