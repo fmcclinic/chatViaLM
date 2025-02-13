@@ -488,10 +488,6 @@
     let currentModel = 'vistral-7b-chat';
     let isConnected = false;
 
-// Thêm biến heartbeat
-let heartbeatInterval = null;
-const HEARTBEAT_INTERVAL = 30000; // 30 giây
-
     // Khởi tạo các hàm đọc cấu hình
     async function loadConfigurations() {
         try {
@@ -595,33 +591,27 @@ Cách tương tác với tôi:
 Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ trợ bạn tốt nhất! 🌟`;
 
     // Initialize
- // Initialize
-document.addEventListener('DOMContentLoaded', async () => {
-    await loadConfigurations();
-    initializeSettingsPanel();
-    
-    // Auto focus input field
-    const inputField = document.getElementById('user-input');
-    if (inputField) {
-        inputField.focus();
-        // Scroll input into view
-        inputField.scrollIntoView({ behavior: 'smooth' });
-    }
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadConfigurations();
+        initializeSettingsPanel();
+         // Auto focus input field
+         const inputField = document.getElementById('user-input');
+        if (inputField) {
+            inputField.focus();
+            // Scroll input into view
+            inputField.scrollIntoView({ behavior: 'smooth' });
+        }
+        document.getElementById('send-btn').addEventListener('click', () => sendMessage());
+        
+        document.getElementById('restart-chat-btn').addEventListener('click', restartChat);
+        document.getElementById('user-input').addEventListener('keypress', handleKeyPress);
+        document.getElementById('temperature').addEventListener('input', handleTemperatureChange);
+        document.getElementById('model-select').addEventListener('change', handleModelChange);
 
-    // Start heartbeat monitoring
-    startHeartbeat();
-    
-    document.getElementById('send-btn').addEventListener('click', () => sendMessage());
-    document.getElementById('restart-chat-btn').addEventListener('click', restartChat);
-    document.getElementById('user-input').addEventListener('keypress', handleKeyPress);
-    document.getElementById('temperature').addEventListener('input', handleTemperatureChange);
-    document.getElementById('model-select').addEventListener('change', handleModelChange);
-
-    loadChatHistory();
-    updateMessageCounter();
-});
-
-
+        loadChatHistory();
+        checkConnection();
+        updateMessageCounter();
+    });
 
     // Handle stream response
  // Add retry functionality
@@ -829,74 +819,44 @@ function scrollToBottom() {
     }
 
     async function checkConnection() {
-    const indicator = document.getElementById('status-indicator');
-    const statusText = document.getElementById('status-text');
+        const indicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
 
-    try {
-        const response = await fetch(`${currentEndpoint}/v1/models`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
-            },
-            mode: 'cors'
-        });
-
-        if (!response.ok) throw new Error('Connection failed');
-
-        const data = await response.json();
-        if (!data || !data.data) throw new Error('Invalid response');
-
-        if (Array.isArray(data.data)) {
-            availableModels = data.data;
-            updateModelSelects();
-        }
-
-        isConnected = true;
-        indicator.className = 'status-indicator status-online';
-        statusText.textContent = 'Đã kết nối';
-        return data;
-
-    } catch (error) {
-        isConnected = false;
-        indicator.className = 'status-indicator status-offline';
-        statusText.textContent = `Mất kết nối: ${error.message}`;
-        console.error('Connection error:', error);
-        throw error;
-    }
-}
-
-// Thêm hàm startHeartbeat
-function startHeartbeat() {
-    // Clear existing interval if any
-    if (heartbeatInterval) {
-        clearInterval(heartbeatInterval);
-    }
-
-    // Initial check
-    checkConnection();
-
-    // Set up periodic checks
-    heartbeatInterval = setInterval(async () => {
         try {
-            await checkConnection();
-            console.log('Heartbeat check: Connection OK');
+            const response = await fetch(`${currentEndpoint}/v1/models`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                mode: 'cors'
+            });
+
+            const data = await response.json();
+
+            if (!data || !data.data) {
+                throw new Error('Invalid API response format');
+            }
+
+            if (Array.isArray(data.data)) {
+                availableModels = data.data;
+                updateModelSelects();
+            }
+
+            isConnected = true;
+            indicator.className = 'status-indicator status-online';
+            statusText.textContent = 'Đã kết nối';
+            return data;
+
         } catch (error) {
-            console.warn('Heartbeat check failed:', error);
+            isConnected = false;
+            indicator.className = 'status-indicator status-offline';
+            statusText.textContent = `Lỗi kết nối: ${error.message}`;
+            console.error('Connection error:', error);
+            throw error;
         }
-    }, HEARTBEAT_INTERVAL);
-
-    // Clean up when page unloads
-    window.addEventListener('unload', () => {
-        if (heartbeatInterval) {
-            clearInterval(heartbeatInterval);
-        }
-    });
-}
-
-
-
+    }
 
     function updateModelSelects() {
         const modelSelect = document.getElementById('model-select');
