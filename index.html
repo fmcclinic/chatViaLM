@@ -1018,60 +1018,65 @@
     });
 </script>
 
-<script>
-    function calculateHeight() {
-        const chatContainer = document.querySelector('.chat-container');
-        const header = document.querySelector('.chat-header');
-        const messages = document.querySelector('.chat-messages');
-        const inputArea = document.querySelector('.input-area');
- 
-        const totalHeight = Math.max(
-            chatContainer?.scrollHeight || 0,
-            (header?.offsetHeight || 0) + 
-            (messages?.scrollHeight || 0) + 
-            (inputArea?.offsetHeight || 0)
+// Thêm debounce để tránh cập nhật quá nhiều
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+const debouncedUpdateHeight = debounce(updateParentHeight, 150);
+
+// Cải thiện MutationObserver
+function setupHeightObserver() {
+    const messages = document.querySelector('.chat-messages');
+    if (!messages) return;
+
+    const observer = new MutationObserver((mutations) => {
+        const isRestart = mutations.some(mutation => 
+            mutation.type === 'childList' && 
+            mutation.removedNodes.length > 0
         );
- 
-        return totalHeight;
-    }
- 
-    function updateParentHeight() {
-        document.body.offsetHeight;
-        const height = calculateHeight();
-        if (height > 0) {
-            window.parent.postMessage({ height: height }, '*');
-        }
-    }
- 
-    document.getElementById('restart-chat-btn')?.addEventListener('click', () => {
-        setTimeout(updateParentHeight, 100);
-    });
- 
-    window.addEventListener('load', () => {
-        [0, 100, 500, 1000].forEach(delay => {
-            setTimeout(updateParentHeight, delay);
-        });
- 
-        const messages = document.querySelector('.chat-messages');
-        if (messages) {
-            new MutationObserver((mutations) => {
-                const isRestart = mutations.some(mutation => 
-                    mutation.type === 'childList' && 
-                    mutation.removedNodes.length > 0
-                );
-                
-                if (isRestart) {
-                    updateParentHeight();
-                } else {
-                    setTimeout(updateParentHeight, 100);
-                }
-            }).observe(messages, {
-                childList: true,
-                subtree: true
-            });
+        
+        if (isRestart) {
+            debouncedUpdateHeight();
+        } else {
+            setTimeout(debouncedUpdateHeight, 100);
         }
     });
- </script>
+
+    observer.observe(messages, {
+        childList: true,
+        subtree: true,
+        characterData: true // Thêm để theo dõi thay đổi nội dung
+    });
+
+    return observer;
+}
+
+// Khởi tạo
+window.addEventListener('load', () => {
+    const heightUpdateDelays = [0, 100, 500, 1000];
+    heightUpdateDelays.forEach(delay => {
+        setTimeout(debouncedUpdateHeight, delay);
+    });
+
+    const observer = setupHeightObserver();
+
+    // Cleanup khi cần
+    window.addEventListener('unload', () => {
+        observer?.disconnect();
+    });
+});
+
+// Xử lý resize window
+window.addEventListener('resize', debouncedUpdateHeight);
 
 
 </body>
