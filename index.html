@@ -1018,65 +1018,78 @@
     });
 </script>
 
-// Thêm debounce để tránh cập nhật quá nhiều
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-const debouncedUpdateHeight = debounce(updateParentHeight, 150);
-
-// Cải thiện MutationObserver
-function setupHeightObserver() {
+<script>
+function calculateHeight() {
+    const chatContainer = document.querySelector('.chat-container');
+    const header = document.querySelector('.chat-header');
     const messages = document.querySelector('.chat-messages');
-    if (!messages) return;
+    const inputArea = document.querySelector('.input-area');
 
-    const observer = new MutationObserver((mutations) => {
-        const isRestart = mutations.some(mutation => 
-            mutation.type === 'childList' && 
-            mutation.removedNodes.length > 0
-        );
-        
-        if (isRestart) {
-            debouncedUpdateHeight();
-        } else {
-            setTimeout(debouncedUpdateHeight, 100);
-        }
-    });
+    // Kiểm tra nếu messages trống
+    const messagesHeight = messages?.scrollHeight || 0;
+    const isEmptyChat = messages && messages.children.length === 0;
 
-    observer.observe(messages, {
-        childList: true,
-        subtree: true,
-        characterData: true // Thêm để theo dõi thay đổi nội dung
-    });
+    // Nếu chat trống, sử dụng chiều cao tối thiểu cho messages area
+    const minMessagesHeight = 350; // Chiều cao tối thiểu cho khu vực messages
+    const actualMessagesHeight = isEmptyChat ? minMessagesHeight : messagesHeight;
 
-    return observer;
+    const totalHeight = Math.max(
+        chatContainer?.scrollHeight || 0,
+        (header?.offsetHeight || 0) + 
+        actualMessagesHeight + 
+        (inputArea?.offsetHeight || 0)
+    );
+
+    return totalHeight;
 }
 
-// Khởi tạo
-window.addEventListener('load', () => {
-    const heightUpdateDelays = [0, 100, 500, 1000];
-    heightUpdateDelays.forEach(delay => {
-        setTimeout(debouncedUpdateHeight, delay);
-    });
+function updateParentHeight() {
+    // Force reflow để đảm bảo DOM đã được cập nhật
+    document.body.offsetHeight;
+    const height = calculateHeight();
+    if (height > 0) {
+        window.parent.postMessage({ height: height }, '*');
+    }
+}
 
-    const observer = setupHeightObserver();
-
-    // Cleanup khi cần
-    window.addEventListener('unload', () => {
-        observer?.disconnect();
+// Cải thiện event listener cho nút restart
+document.getElementById('restart-chat-btn')?.addEventListener('click', () => {
+    // Thêm nhiều lần kiểm tra để đảm bảo chiều cao được cập nhật đúng
+    [0, 100, 300, 500].forEach(delay => {
+        setTimeout(updateParentHeight, delay);
     });
 });
 
-// Xử lý resize window
-window.addEventListener('resize', debouncedUpdateHeight);
+// Cải thiện MutationObserver
+window.addEventListener('load', () => {
+    [0, 100, 500, 1000].forEach(delay => {
+        setTimeout(updateParentHeight, delay);
+    });
+
+    const messages = document.querySelector('.chat-messages');
+    if (messages) {
+        new MutationObserver((mutations) => {
+            const isRestart = mutations.some(mutation => 
+                mutation.type === 'childList' && 
+                mutation.removedNodes.length > 0
+            );
+            
+            if (isRestart) {
+                // Khi restart, kiểm tra nhiều lần
+                [0, 100, 300, 500].forEach(delay => {
+                    setTimeout(updateParentHeight, delay);
+                });
+            } else {
+                setTimeout(updateParentHeight, 100);
+            }
+        }).observe(messages, {
+            childList: true,
+            subtree: true,
+            characterData: true // Thêm để theo dõi thay đổi nội dung
+        });
+    }
+});
+ </script>
 
 
 </body>
