@@ -1018,60 +1018,128 @@
     });
 </script>
 
+// Thêm vào cuối MedicalAI.html trước </body>
 <script>
-    function calculateHeight() {
+// Constants
+const MIN_CHAT_HEIGHT = 600; // Chiều cao tối thiểu của chat container
+const RESIZE_DEBOUNCE_TIME = 100; // Thời gian debounce cho resize
+const HEIGHT_UPDATE_DELAY = 50; // Delay cập nhật chiều cao
+
+// Utility function để debounce việc cập nhật chiều cao
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Hàm tính toán chiều cao
+function calculateHeight() {
+    try {
         const chatContainer = document.querySelector('.chat-container');
         const header = document.querySelector('.chat-header');
         const messages = document.querySelector('.chat-messages');
         const inputArea = document.querySelector('.input-area');
- 
+
+        if (!chatContainer || !header || !messages || !inputArea) {
+            throw new Error('Required elements not found');
+        }
+
+        // Tính toán khoảng cách từ tin nhắn cuối cùng đến input
+        const lastMessage = messages.lastElementChild;
+        const messageBottomPadding = lastMessage ? 
+            parseInt(window.getComputedStyle(lastMessage).marginBottom) : 0;
+
+        // Tính toán chiều cao tổng thể
         const totalHeight = Math.max(
-            chatContainer?.scrollHeight || 0,
-            (header?.offsetHeight || 0) + 
-            (messages?.scrollHeight || 0) + 
-            (inputArea?.offsetHeight || 0)
+            MIN_CHAT_HEIGHT,
+            header.offsetHeight + 
+            messages.scrollHeight + 
+            inputArea.offsetHeight + 
+            messageBottomPadding
         );
- 
-        return totalHeight;
+
+        // Đảm bảo không có khoảng trống lớn
+        const messageInputGap = 20; // Khoảng cách mong muốn giữa tin nhắn và input
+        const adjustedHeight = lastMessage ? 
+            Math.min(totalHeight, lastMessage.offsetTop + lastMessage.offsetHeight + messageInputGap + inputArea.offsetHeight) :
+            MIN_CHAT_HEIGHT;
+
+        return adjustedHeight;
+    } catch (error) {
+        console.error('Error calculating height:', error);
+        return MIN_CHAT_HEIGHT; // Fallback height
     }
- 
-    function updateParentHeight() {
-        document.body.offsetHeight;
+}
+
+// Hàm cập nhật chiều cao
+const updateParentHeight = debounce(() => {
+    try {
         const height = calculateHeight();
         if (height > 0) {
-            window.parent.postMessage({ height: height }, '*');
+            window.parent.postMessage(
+                { height: height }, 
+                'https://fmcclinic.github.io' // Thay thế bằng domain thực tế của bạn
+            );
         }
+    } catch (error) {
+        console.error('Error updating height:', error);
     }
- 
-    document.getElementById('restart-chat-btn')?.addEventListener('click', () => {
-        setTimeout(updateParentHeight, 100);
-    });
- 
-    window.addEventListener('load', () => {
-        [0, 100, 500, 1000].forEach(delay => {
-            setTimeout(updateParentHeight, delay);
+}, RESIZE_DEBOUNCE_TIME);
+
+// Khởi tạo ResizeObserver
+const resizeObserver = new ResizeObserver(debounce(() => {
+    requestAnimationFrame(updateParentHeight);
+}, RESIZE_DEBOUNCE_TIME));
+
+// Setup observers và event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    const chatContainer = document.querySelector('.chat-container');
+    const messages = document.querySelector('.chat-messages');
+
+    if (chatContainer) {
+        resizeObserver.observe(chatContainer);
+    }
+
+    if (messages) {
+        // Observer cho thay đổi nội dung
+        const mutationObserver = new MutationObserver((mutations) => {
+            const hasContentChanges = mutations.some(mutation => 
+                mutation.type === 'childList' || 
+                mutation.type === 'characterData'
+            );
+
+            if (hasContentChanges) {
+                setTimeout(updateParentHeight, HEIGHT_UPDATE_DELAY);
+            }
         });
- 
-        const messages = document.querySelector('.chat-messages');
-        if (messages) {
-            new MutationObserver((mutations) => {
-                const isRestart = mutations.some(mutation => 
-                    mutation.type === 'childList' && 
-                    mutation.removedNodes.length > 0
-                );
-                
-                if (isRestart) {
-                    updateParentHeight();
-                } else {
-                    setTimeout(updateParentHeight, 100);
-                }
-            }).observe(messages, {
-                childList: true,
-                subtree: true
-            });
-        }
+
+        mutationObserver.observe(messages, {
+            childList: true,
+            subtree: true,
+            characterData: true
+        });
+    }
+
+    // Xử lý nút restart
+    document.getElementById('restart-chat-btn')?.addEventListener('click', () => {
+        setTimeout(updateParentHeight, HEIGHT_UPDATE_DELAY);
     });
- </script>
+
+    // Initial height update
+    setTimeout(updateParentHeight, HEIGHT_UPDATE_DELAY);
+});
+
+// Cleanup khi unload
+window.addEventListener('unload', () => {
+    resizeObserver.disconnect();
+});
+</script>
 
 </body>
 </html>
