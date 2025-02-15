@@ -1019,29 +1019,35 @@
 </script>
 
 <script>
-    // Constant cho chiều cao cố định
-    const FIXED_HEIGHT = 800; // Chiều cao cố định ban đầu 
+    // Debug version để kiểm tra message
+    const FIXED_HEIGHT = 800;
     
-    // Hàm đơn giản để gửi chiều cao
     function sendFixedHeight() {
+        // Log trước khi gửi
+        console.log('Sending height:', FIXED_HEIGHT);
+        
+        // Gửi message
         window.parent.postMessage(
             { height: FIXED_HEIGHT },
-            'https://fmcclinic.github.io'
+            '*'  // Tạm thời dùng '*' để test
         );
     }
     
-    // Gửi chiều cao khi page load
+    // Kiểm tra khi page load
     document.addEventListener('DOMContentLoaded', () => {
-        // Gửi ngay lập tức
+        console.log('DOMContentLoaded triggered');
         sendFixedHeight();
         
-        // Gửi lại sau 300ms để đảm bảo
-        setTimeout(sendFixedHeight, 300);
+        // Gửi lại sau một khoảng thời gian
+        setTimeout(() => {
+            console.log('Delayed height send triggered');
+            sendFixedHeight();
+        }, 300);
     });
     
-    // Thêm xử lý cho nút restart
+    // Log khi click nút restart
     document.getElementById('restart-chat-btn')?.addEventListener('click', () => {
-        // Gửi lại chiều cao sau khi restart
+        console.log('Restart button clicked');
         setTimeout(sendFixedHeight, 100);
     });
     </script>
