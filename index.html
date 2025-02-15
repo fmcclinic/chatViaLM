@@ -1019,174 +1019,30 @@
 </script>
 
 <script>
-    // Constants
-    const MIN_CHAT_HEIGHT = 600;
-    const MAX_CHAT_HEIGHT = 2000;
-    const RESIZE_DEBOUNCE_TIME = 100;
-    const STREAM_UPDATE_DELAY = 30;
-    const WELCOME_MESSAGE_HEIGHT = 400; // Chiều cao tối thiểu cho welcome message
+    // Constant cho chiều cao cố định
+    const FIXED_HEIGHT = 800; // Chiều cao cố định ban đầu 
     
-    let isStreaming = false;
-    let heightUpdateTimeout = null;
-    
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
+    // Hàm đơn giản để gửi chiều cao
+    function sendFixedHeight() {
+        window.parent.postMessage(
+            { height: FIXED_HEIGHT },
+            'https://fmcclinic.github.io'
+        );
     }
     
-    function calculateHeight() {
-        try {
-            const chatContainer = document.querySelector('.chat-container');
-            const header = document.querySelector('.chat-header');
-            const messages = document.querySelector('.chat-messages');
-            const inputArea = document.querySelector('.input-area');
-    
-            if (!chatContainer || !header || !messages || !inputArea) {
-                throw new Error('Required elements not found');
-            }
-    
-            // Tính toán chiều cao cơ bản
-            let contentHeight = header.offsetHeight + 
-                              messages.scrollHeight + 
-                              inputArea.offsetHeight;
-    
-            // Kiểm tra nếu chỉ có welcome message
-            const messageCount = messages.children.length;
-            if (messageCount <= 1) { // Chỉ có welcome message
-                contentHeight = Math.max(contentHeight, MIN_CHAT_HEIGHT + WELCOME_MESSAGE_HEIGHT);
-            }
-    
-            // Thêm padding và đảm bảo không gian cho input
-            contentHeight += 40; // Thêm padding tổng thể
-    
-            // Đảm bảo khoảng cách tối thiểu từ tin nhắn cuối đến input
-            const lastMessage = messages.lastElementChild;
-            if (lastMessage) {
-                const lastMessageBottom = lastMessage.offsetTop + lastMessage.offsetHeight;
-                const minGapToInput = 60; // Khoảng cách tối thiểu từ tin nhắn cuối đến input
-                const inputTop = messages.offsetHeight;
-                
-                if (inputTop - lastMessageBottom < minGapToInput) {
-                    contentHeight += minGapToInput - (inputTop - lastMessageBottom);
-                }
-            }
-    
-            // Áp dụng giới hạn
-            const finalHeight = Math.min(
-                Math.max(contentHeight, MIN_CHAT_HEIGHT),
-                MAX_CHAT_HEIGHT
-            );
-    
-            // Nếu đang streaming, không cho phép chiều cao giảm
-            if (isStreaming) {
-                const currentHeight = chatContainer.offsetHeight;
-                return Math.max(finalHeight, currentHeight);
-            }
-    
-            return finalHeight;
-        } catch (error) {
-            console.error('Height calculation error:', error);
-            return MIN_CHAT_HEIGHT;
-        }
-    }
-    
-    // Cập nhật chiều cao khi streaming
-    const updateHeightDuringStream = debounce(() => {
-        const height = calculateHeight();
-        if (height > 0) {
-            window.parent.postMessage(
-                { height: height },
-                'https://fmcclinic.github.io'
-            );
-        }
-    }, STREAM_UPDATE_DELAY);
-    
-    // Cập nhật chiều cao thông thường
-    const updateParentHeight = debounce(() => {
-        if (isStreaming) return;
-    
-        const height = calculateHeight();
-        if (height > 0) {
-            window.parent.postMessage(
-                { height: height },
-                'https://fmcclinic.github.io'
-            );
-        }
-    }, RESIZE_DEBOUNCE_TIME);
-    
-    // Cập nhật đặc biệt cho restart
-    function updateHeightAfterRestart() {
-        isStreaming = false;
-        // Đợi DOM cập nhật
-        setTimeout(() => {
-            const height = calculateHeight();
-            window.parent.postMessage(
-                { height: height },
-                'https://fmcclinic.github.io'
-            );
-        }, 100);
-    }
-    
+    // Gửi chiều cao khi page load
     document.addEventListener('DOMContentLoaded', () => {
-        const chatContainer = document.querySelector('.chat-container');
-        const messages = document.querySelector('.chat-messages');
-    
-        // ResizeObserver
-        const resizeObserver = new ResizeObserver(() => {
-            if (!isStreaming) {
-                requestAnimationFrame(updateParentHeight);
-            }
-        });
-    
-        if (chatContainer) {
-            resizeObserver.observe(chatContainer);
-        }
-    
-        // MutationObserver
-        if (messages) {
-            const mutationObserver = new MutationObserver((mutations) => {
-                const hasContentChanges = mutations.some(mutation => 
-                    mutation.type === 'childList' || 
-                    mutation.type === 'characterData'
-                );
-    
-                if (hasContentChanges) {
-                    if (isStreaming) {
-                        updateHeightDuringStream();
-                    } else {
-                        updateParentHeight();
-                    }
-                }
-            });
-    
-            mutationObserver.observe(messages, {
-                childList: true,
-                subtree: true,
-                characterData: true
-            });
-        }
-    
-        // Xử lý restart
-        document.getElementById('restart-chat-btn')?.addEventListener('click', () => {
-            updateHeightAfterRestart();
-        });
-    
-        // Initial height update
-        setTimeout(updateParentHeight, 300);
+        // Gửi ngay lập tức
+        sendFixedHeight();
+        
+        // Gửi lại sau 300ms để đảm bảo
+        setTimeout(sendFixedHeight, 300);
     });
     
-    // Cleanup
-    window.addEventListener('unload', () => {
-        if (resizeObserver) {
-            resizeObserver.disconnect();
-        }
+    // Thêm xử lý cho nút restart
+    document.getElementById('restart-chat-btn')?.addEventListener('click', () => {
+        // Gửi lại chiều cao sau khi restart
+        setTimeout(sendFixedHeight, 100);
     });
     </script>
 
