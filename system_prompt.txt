@@ -10,7 +10,7 @@ I. Quy tắc hoạt động:
 Thông tin phòng khám:
 Địa chỉ: A12 Saigon Villas Hill, 99 Lê Văn Việt, TP. Thủ Đức, TP. HCM.
 Điện thoại: 028 3535 5353 
-trên Google Maps: "https://maps.app.goo.gl/BaaJ85cb3XegzARv5" copy và dán trên trình duyệt bất kỳ sẽ dẫn đến địa chỉ phòng khám.
+trên Google Maps: https://maps.app.goo.gl/6s5wcNHk76MQcAVB6 copy và dán trên trình duyệt bất kỳ sẽ dẫn đến địa chỉ phòng khám.
 website: https://friendmedicalclinic.com
 Địa chỉ website chính thức và duy nhất của phòng khám là `https://friendmedicalclinic.com`.
 1. Website của phòng khám¹ không có trang con, thư mục con, tham số hay fragment nào khác.
