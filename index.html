@@ -1021,14 +1021,14 @@
 <script>
     // Constants
     const MIN_CHAT_HEIGHT = 600;
-    const MAX_CHAT_HEIGHT = 2000; // Thêm giới hạn chiều cao tối đa
+    const MAX_CHAT_HEIGHT = 2000;
     const RESIZE_DEBOUNCE_TIME = 100;
-    const STREAM_UPDATE_DELAY = 30; // Delay ngắn hơn cho stream updates
+    const STREAM_UPDATE_DELAY = 30;
+    const WELCOME_MESSAGE_HEIGHT = 400; // Chiều cao tối thiểu cho welcome message
     
-    let isStreaming = false; // Flag để theo dõi trạng thái streaming
+    let isStreaming = false;
     let heightUpdateTimeout = null;
     
-    // Debounce utility
     function debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -1041,49 +1041,63 @@
         };
     }
     
-    // Tính toán chiều cao với các ràng buộc
     function calculateHeight() {
         try {
             const chatContainer = document.querySelector('.chat-container');
             const header = document.querySelector('.chat-header');
             const messages = document.querySelector('.chat-messages');
             const inputArea = document.querySelector('.input-area');
-            const lastMessage = messages?.lastElementChild;
     
             if (!chatContainer || !header || !messages || !inputArea) {
                 throw new Error('Required elements not found');
             }
     
-            // Tính toán chiều cao của content
-            const contentHeight = header.offsetHeight + 
-                                messages.scrollHeight + 
-                                inputArea.offsetHeight;
+            // Tính toán chiều cao cơ bản
+            let contentHeight = header.offsetHeight + 
+                              messages.scrollHeight + 
+                              inputArea.offsetHeight;
     
-            // Tính toán khoảng cách phù hợp giữa tin nhắn cuối và input
-            const lastMessageHeight = lastMessage ? 
-                lastMessage.offsetHeight + 20 : // 20px padding
-                0;
+            // Kiểm tra nếu chỉ có welcome message
+            const messageCount = messages.children.length;
+            if (messageCount <= 1) { // Chỉ có welcome message
+                contentHeight = Math.max(contentHeight, MIN_CHAT_HEIGHT + WELCOME_MESSAGE_HEIGHT);
+            }
     
-            // Giới hạn chiều cao trong khoảng MIN và MAX
-            const proposedHeight = Math.min(
+            // Thêm padding và đảm bảo không gian cho input
+            contentHeight += 40; // Thêm padding tổng thể
+    
+            // Đảm bảo khoảng cách tối thiểu từ tin nhắn cuối đến input
+            const lastMessage = messages.lastElementChild;
+            if (lastMessage) {
+                const lastMessageBottom = lastMessage.offsetTop + lastMessage.offsetHeight;
+                const minGapToInput = 60; // Khoảng cách tối thiểu từ tin nhắn cuối đến input
+                const inputTop = messages.offsetHeight;
+                
+                if (inputTop - lastMessageBottom < minGapToInput) {
+                    contentHeight += minGapToInput - (inputTop - lastMessageBottom);
+                }
+            }
+    
+            // Áp dụng giới hạn
+            const finalHeight = Math.min(
                 Math.max(contentHeight, MIN_CHAT_HEIGHT),
                 MAX_CHAT_HEIGHT
             );
     
-            // Nếu đang streaming, đảm bảo chiều cao không nhỏ hơn giá trị hiện tại
+            // Nếu đang streaming, không cho phép chiều cao giảm
             if (isStreaming) {
                 const currentHeight = chatContainer.offsetHeight;
-                return Math.max(proposedHeight, currentHeight);
+                return Math.max(finalHeight, currentHeight);
             }
     
-            return proposedHeight;
+            return finalHeight;
         } catch (error) {
             console.error('Height calculation error:', error);
             return MIN_CHAT_HEIGHT;
         }
     }
     
-    // Cập nhật chiều cao với throttling cho streaming
+    // Cập nhật chiều cao khi streaming
     const updateHeightDuringStream = debounce(() => {
         const height = calculateHeight();
         if (height > 0) {
@@ -1096,7 +1110,7 @@
     
     // Cập nhật chiều cao thông thường
     const updateParentHeight = debounce(() => {
-        if (isStreaming) return; // Không cập nhật nếu đang streaming
+        if (isStreaming) return;
     
         const height = calculateHeight();
         if (height > 0) {
@@ -1107,25 +1121,24 @@
         }
     }, RESIZE_DEBOUNCE_TIME);
     
-    // Theo dõi quá trình streaming
-    function startStreamingUpdate() {
-        isStreaming = true;
-    }
-    
-    function endStreamingUpdate() {
+    // Cập nhật đặc biệt cho restart
+    function updateHeightAfterRestart() {
         isStreaming = false;
-        // Đảm bảo cập nhật cuối cùng sau khi stream kết thúc
+        // Đợi DOM cập nhật
         setTimeout(() => {
-            updateParentHeight();
-        }, RESIZE_DEBOUNCE_TIME);
+            const height = calculateHeight();
+            window.parent.postMessage(
+                { height: height },
+                'https://fmcclinic.github.io'
+            );
+        }, 100);
     }
     
-    // Khởi tạo observers
     document.addEventListener('DOMContentLoaded', () => {
         const chatContainer = document.querySelector('.chat-container');
         const messages = document.querySelector('.chat-messages');
     
-        // ResizeObserver cho container
+        // ResizeObserver
         const resizeObserver = new ResizeObserver(() => {
             if (!isStreaming) {
                 requestAnimationFrame(updateParentHeight);
@@ -1136,7 +1149,7 @@
             resizeObserver.observe(chatContainer);
         }
     
-        // MutationObserver cho messages
+        // MutationObserver
         if (messages) {
             const mutationObserver = new MutationObserver((mutations) => {
                 const hasContentChanges = mutations.some(mutation => 
@@ -1162,35 +1175,19 @@
     
         // Xử lý restart
         document.getElementById('restart-chat-btn')?.addEventListener('click', () => {
-            endStreamingUpdate(); // Đảm bảo reset streaming state
-            setTimeout(updateParentHeight, RESIZE_DEBOUNCE_TIME);
+            updateHeightAfterRestart();
         });
+    
+        // Initial height update
+        setTimeout(updateParentHeight, 300);
     });
     
-    // Tích hợp với quá trình streaming hiện tại
-    // Thêm vào hàm processStreamResponse:
-    async function processStreamResponse(reader, botMessageContent) {
-        startStreamingUpdate(); // Bắt đầu streaming
-        try {
-            // ... existing streaming code ...
-            
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                
-                // ... existing processing code ...
-                
-                if (token) {
-                    botReply += token;
-                    botMessageContent.textContent = botReply;
-                    updateHeightDuringStream();
-                }
-            }
-        } finally {
-            endStreamingUpdate(); // Kết thúc streaming
+    // Cleanup
+    window.addEventListener('unload', () => {
+        if (resizeObserver) {
+            resizeObserver.disconnect();
         }
-        return botReply;
-    }
+    });
     </script>
 
 </body>
