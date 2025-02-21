@@ -16,7 +16,6 @@
         let currentEndpoint = '';
         let chatHistory = [];
         
-        // Load API URL from file
         async function loadConfigurations() {
             try {
                 const apiResponse = await fetch('api_url.txt');
@@ -83,7 +82,7 @@
                         messages: [
                             {
                                 role: 'user',
-                                content: `Dựa vào cuộc hội thoại sau:\nCâu hỏi: ${question}\nCâu trả lời: ${answer}\n\nHãy đề xuất 3 câu hỏi tiếp theo ngắn gọn và liên quan. Chỉ trả lời dưới dạng danh sách đánh số.`
+                                content: `Dựa vào cuộc hội thoại sau:\nCâu hỏi: ${question}\nCâu trả lời: ${answer}\n\nHãy đề xuất CHÍNH XÁC 5 câu hỏi tiếp theo ngắn gọn và liên quan. Chỉ trả lời dưới dạng danh sách đánh số từ 1-5, mỗi câu một dòng. PHẢI ĐỦ 5 CÂU KHÔNG THIẾU KHÔNG THỪA.`
                             }
                         ],
                         temperature: 0.7,
@@ -104,6 +103,8 @@
                 const lines = suggestions.split('\n');
                 suggestionsDiv.innerHTML = '<br>Câu hỏi gợi ý:<br>'; // Reset content
                 
+                let questionCount = 0;
+                
                 lines.forEach(line => {
                     if (line.trim() && line.match(/^\d/)) {
                         const button = document.createElement('button');
@@ -114,8 +115,54 @@
                         };
                         suggestionsDiv.appendChild(button);
                         suggestionsDiv.appendChild(document.createElement('br'));
+                        questionCount++;
                     }
                 });
+
+                // If we didn't get exactly 5 questions, try to fix it
+                if (questionCount !== 5) {
+                    // Try one more time with a more explicit prompt
+                    const retryResponse = await fetch(`${currentEndpoint}/v1/chat/completions`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'ngrok-skip-browser-warning': 'true'
+                        },
+                        mode: 'cors',
+                        body: JSON.stringify({
+                            model: 'vistral-7b-chat',
+                            messages: [
+                                {
+                                    role: 'user',
+                                    content: `Dựa vào cuộc hội thoại:\nCâu hỏi: ${question}\nCâu trả lời: ${answer}\n\nHãy tạo CHÍNH XÁC 5 câu hỏi liên quan, trả lời theo format:\n1. [câu hỏi 1]\n2. [câu hỏi 2]\n3. [câu hỏi 3]\n4. [câu hỏi 4]\n5. [câu hỏi 5]`
+                                }
+                            ],
+                            temperature: 0.7,
+                            max_tokens: 500,
+                            stream: true
+                        })
+                    });
+
+                    if (retryResponse.ok) {
+                        suggestionsDiv.innerHTML = '<br>Câu hỏi gợi ý:<br>'; // Reset content
+                        const retrySuggestions = await processStreamResponse(retryResponse.body.getReader(), suggestionsDiv);
+                        const retryLines = retrySuggestions.split('\n');
+                        
+                        retryLines.forEach(line => {
+                            if (line.trim() && line.match(/^\d/)) {
+                                const button = document.createElement('button');
+                                button.textContent = line.replace(/^\d+\.\s*/, '').trim();
+                                button.onclick = () => {
+                                    document.getElementById('user-input').value = button.textContent;
+                                    document.getElementById('user-input').focus();
+                                };
+                                suggestionsDiv.appendChild(button);
+                                suggestionsDiv.appendChild(document.createElement('br'));
+                            }
+                        });
+                    }
+                }
 
             } catch (error) {
                 console.error('Error generating suggestions:', error);
