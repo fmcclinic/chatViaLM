@@ -70,30 +70,50 @@ healthcare tonsillitis`
         if (!response.ok) throw new Error('API error');
 
         const data = await response.json();
-        // Kiểm tra và log response
-        console.log('AI response:', data);
+        console.log('Full AI response:', data); // Log toàn bộ response
 
-        // Kiểm tra cấu trúc data
-        if (!data.choices || !data.choices[0] || !data.choices[0].content) {
-            throw new Error('Invalid AI response format');
+        // Kiểm tra từng bước cấu trúc data
+        if (!data.choices) {
+            console.error('No choices in response');
+            throw new Error('No choices in response');
         }
 
-        const keywords = data.choices[0].content.trim().split('\n');
-        console.log('Generated keywords:', keywords);
+        if (!data.choices[0]) {
+            console.error('Empty choices array');
+            throw new Error('Empty choices array');
+        }
+
+        if (!data.choices[0].message) {
+            console.error('No message in choice');
+            throw new Error('No message in choice');
+        }
+
+        if (!data.choices[0].message.content) {
+            console.error('No content in message');
+            throw new Error('No content in message');
+        }
+
+        const content = data.choices[0].message.content.trim();
+        console.log('Content from AI:', content); // Log nội dung
+
+        const keywords = content.split('\n').filter(line => line.trim()); // Lọc dòng trống
+        console.log('Parsed keywords:', keywords); // Log sau khi parse
 
         // Đảm bảo luôn trả về đúng 2 từ khóa
         if (keywords.length < 2) {
+            console.log('Not enough keywords, using defaults');
             return [
                 'medical healthcare',
                 'healthcare medical'
             ];
         }
 
-        return keywords.slice(0, 2);  // Chỉ lấy 2 từ khóa đầu tiên
+        return keywords.slice(0, 2);
 
     } catch (error) {
         console.error('Error getting English keywords:', error);
-        // Trả về từ khóa mặc định khi có lỗi
+        // Log stack trace để debug
+        console.error('Stack:', error.stack);
         return [
             'medical healthcare',
             'healthcare medical'
