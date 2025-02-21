@@ -67,8 +67,47 @@
             return fullResponse;
         }
 
+        function parseQuestions(text) {
+            const questions = [];
+            const lines = text.split('\n');
+            
+            for (const line of lines) {
+                const match = line.trim().match(/^\d+\.\s*(.+)/);
+                if (match) {
+                    const question = match[1].trim();
+                    if (question) {
+                        questions.push(question);
+                    }
+                }
+            }
+            
+            return questions;
+        }
+
+        function createSuggestedButtons(questions, container) {
+            container.innerHTML = '<br>Câu hỏi gợi ý:<br>';
+            
+            questions.forEach((question, index) => {
+                const button = document.createElement('button');
+                button.textContent = question;
+                button.onclick = () => {
+                    document.getElementById('user-input').value = question;
+                    document.getElementById('user-input').focus();
+                };
+                container.appendChild(button);
+                container.appendChild(document.createElement('br'));
+            });
+
+            // Log để debug
+            console.log('Created buttons:', questions.length);
+            console.log('Questions:', questions);
+        }
+
         async function generateSuggestedQuestions(question, answer) {
             try {
+                const suggestionsDiv = document.createElement('div');
+                document.getElementById('chat-messages').appendChild(suggestionsDiv);
+
                 const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
                     method: 'POST',
                     headers: {
@@ -87,7 +126,7 @@
 - KHÔNG sử dụng format trắc nghiệm hay các lựa chọn A,B,C,D
 - Câu hỏi phải thực tế và hữu ích với người bệnh
 - Tập trung vào: triệu chứng, cách điều trị, phòng ngừa, khi nào cần khám
-- Trả lời dưới dạng danh sách đánh số từ 1-5
+- Trả lời dưới dạng danh sách đánh số từ 1-5, mỗi câu một dòng riêng biệt
 - Chỉ viết câu hỏi, không thêm bất kỳ nội dung nào khác`
                             },
                             {
@@ -107,33 +146,13 @@ Hãy tạo 5 câu hỏi tiếp theo phù hợp cho người dùng.`
 
                 if (!response.ok) throw new Error('API error: ' + response.status);
 
-                const suggestionsDiv = document.createElement('div');
-                suggestionsDiv.innerHTML = '<br>Câu hỏi gợi ý:<br>';
-                document.getElementById('chat-messages').appendChild(suggestionsDiv);
-
                 const suggestions = await processStreamResponse(response.body.getReader(), suggestionsDiv);
-                
-                suggestionsDiv.innerHTML = '<br>Câu hỏi gợi ý:<br>';
-                
-                const lines = suggestions.split('\n');
-                let questionCount = 0;
-                
-                lines.forEach(line => {
-                    if (line.trim() && line.match(/^\d/)) {
-                        const button = document.createElement('button');
-                        button.textContent = line.replace(/^\d+\.\s*/, '').trim();
-                        button.onclick = () => {
-                            document.getElementById('user-input').value = button.textContent;
-                            document.getElementById('user-input').focus();
-                        };
-                        suggestionsDiv.appendChild(button);
-                        suggestionsDiv.appendChild(document.createElement('br'));
-                        questionCount++;
-                    }
-                });
+                const parsedQuestions = parseQuestions(suggestions);
 
-                // Nếu không đủ 5 câu, thử lại với prompt khác
-                if (questionCount !== 5) {
+                if (parsedQuestions.length === 5) {
+                    createSuggestedButtons(parsedQuestions, suggestionsDiv);
+                } else {
+                    console.log('Không đủ 5 câu hỏi, thử lại...');
                     const retryResponse = await fetch(`${currentEndpoint}/v1/chat/completions`, {
                         method: 'POST',
                         headers: {
@@ -154,6 +173,7 @@ Hãy tạo 5 câu hỏi tiếp theo phù hợp cho người dùng.`
 4. [câu hỏi về thời điểm cần khám]
 5. [câu hỏi về chế độ sinh hoạt]
 
+Mỗi câu phải xuống dòng riêng biệt.
 Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng trắc nghiệm.`
                                 },
                                 {
@@ -168,22 +188,9 @@ Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng tr�
                     });
 
                     if (retryResponse.ok) {
-                        suggestionsDiv.innerHTML = '<br>Câu hỏi gợi ý:<br>';
                         const retrySuggestions = await processStreamResponse(retryResponse.body.getReader(), suggestionsDiv);
-                        const retryLines = retrySuggestions.split('\n');
-                        
-                        retryLines.forEach(line => {
-                            if (line.trim() && line.match(/^\d/)) {
-                                const button = document.createElement('button');
-                                button.textContent = line.replace(/^\d+\.\s*/, '').trim();
-                                button.onclick = () => {
-                                    document.getElementById('user-input').value = button.textContent;
-                                    document.getElementById('user-input').focus();
-                                };
-                                suggestionsDiv.appendChild(button);
-                                suggestionsDiv.appendChild(document.createElement('br'));
-                            }
-                        });
+                        const retryQuestions = parseQuestions(retrySuggestions);
+                        createSuggestedButtons(retryQuestions, suggestionsDiv);
                     }
                 }
 
