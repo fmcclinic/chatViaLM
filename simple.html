@@ -81,8 +81,22 @@
                         model: 'vistral-7b-chat',
                         messages: [
                             {
+                                role: 'system',
+                                content: `Bạn là một trợ lý y tế. Hãy tạo câu hỏi theo các nguyên tắc sau:
+- Tạo CHÍNH XÁC 5 câu hỏi đơn giản và ngắn gọn (dưới 15 từ)
+- KHÔNG sử dụng format trắc nghiệm hay các lựa chọn A,B,C,D
+- Câu hỏi phải thực tế và hữu ích với người bệnh
+- Tập trung vào: triệu chứng, cách điều trị, phòng ngừa, khi nào cần khám
+- Trả lời dưới dạng danh sách đánh số từ 1-5
+- Chỉ viết câu hỏi, không thêm bất kỳ nội dung nào khác`
+                            },
+                            {
                                 role: 'user',
-                                content: `Dựa vào cuộc hội thoại sau:\nCâu hỏi: ${question}\nCâu trả lời: ${answer}\n\nHãy đề xuất CHÍNH XÁC 5 câu hỏi tiếp theo ngắn gọn và liên quan. Chỉ trả lời dưới dạng danh sách đánh số từ 1-5, mỗi câu một dòng. PHẢI ĐỦ 5 CÂU KHÔNG THIẾU KHÔNG THỪA.`
+                                content: `Dựa vào cuộc hội thoại sau:
+Câu hỏi: ${question}
+Câu trả lời: ${answer}
+
+Hãy tạo 5 câu hỏi tiếp theo phù hợp cho người dùng.`
                             }
                         ],
                         temperature: 0.7,
@@ -99,10 +113,9 @@
 
                 const suggestions = await processStreamResponse(response.body.getReader(), suggestionsDiv);
                 
-                // Convert suggestions into clickable buttons
-                const lines = suggestions.split('\n');
-                suggestionsDiv.innerHTML = '<br>Câu hỏi gợi ý:<br>'; // Reset content
+                suggestionsDiv.innerHTML = '<br>Câu hỏi gợi ý:<br>';
                 
+                const lines = suggestions.split('\n');
                 let questionCount = 0;
                 
                 lines.forEach(line => {
@@ -119,9 +132,8 @@
                     }
                 });
 
-                // If we didn't get exactly 5 questions, try to fix it
+                // Nếu không đủ 5 câu, thử lại với prompt khác
                 if (questionCount !== 5) {
-                    // Try one more time with a more explicit prompt
                     const retryResponse = await fetch(`${currentEndpoint}/v1/chat/completions`, {
                         method: 'POST',
                         headers: {
@@ -134,8 +146,19 @@
                             model: 'vistral-7b-chat',
                             messages: [
                                 {
+                                    role: 'system',
+                                    content: `Bạn là trợ lý y tế. Trả lời chính xác theo format sau:
+1. [câu hỏi về triệu chứng]
+2. [câu hỏi về cách điều trị]
+3. [câu hỏi về cách phòng ngừa]
+4. [câu hỏi về thời điểm cần khám]
+5. [câu hỏi về chế độ sinh hoạt]
+
+Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng trắc nghiệm.`
+                                },
+                                {
                                     role: 'user',
-                                    content: `Dựa vào cuộc hội thoại:\nCâu hỏi: ${question}\nCâu trả lời: ${answer}\n\nHãy tạo CHÍNH XÁC 5 câu hỏi liên quan, trả lời theo format:\n1. [câu hỏi 1]\n2. [câu hỏi 2]\n3. [câu hỏi 3]\n4. [câu hỏi 4]\n5. [câu hỏi 5]`
+                                    content: `Chủ đề: ${question}\nPhân tích: ${answer}\n\nTạo 5 câu hỏi theo format yêu cầu.`
                                 }
                             ],
                             temperature: 0.7,
@@ -145,7 +168,7 @@
                     });
 
                     if (retryResponse.ok) {
-                        suggestionsDiv.innerHTML = '<br>Câu hỏi gợi ý:<br>'; // Reset content
+                        suggestionsDiv.innerHTML = '<br>Câu hỏi gợi ý:<br>';
                         const retrySuggestions = await processStreamResponse(retryResponse.body.getReader(), suggestionsDiv);
                         const retryLines = retrySuggestions.split('\n');
                         
