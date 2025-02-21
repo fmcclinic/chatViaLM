@@ -30,52 +30,76 @@
         }
 
         async function getEnglishKeywords(text) {
-            try {
-                const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    mode: 'cors',
-                    body: JSON.stringify({
-                        model: 'vistral-7b-chat',
-                        messages: [
-                            {
-                                role: 'system',
-                                content: `Create EXACTLY 2 English medical keywords for image search from Vietnamese medical question. Rules:
-- Each keyword should be independent medical term
-- Return ONLY 2 lines, each line contains 1 keyword
-- DO NOT explain, DO NOT add numbers
-- Add 'medical' or 'healthcare' to each keyword
-Format example:
+    try {
+        const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            },
+            mode: 'cors',
+            body: JSON.stringify({
+                model: 'vistral-7b-chat',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are a medical translator.
+Create EXACTLY 2 English medical keywords from Vietnamese medical question.
+Rules:
+- Return ONLY 2 lines
+- Each line must start with 'medical' or 'healthcare'
+- MUST be in this format:
+medical [symptom/condition]
+healthcare [symptom/condition]
+Example:
 medical sore throat
 healthcare tonsillitis`
-                            },
-                            {
-                                role: 'user',
-                                content: text
-                            }
-                        ],
-                        temperature: 0.7,
-                        max_tokens: 100,
-                        stream: false
-                    })
-                });
+                    },
+                    {
+                        role: 'user',
+                        content: text
+                    }
+                ],
+                temperature: 0.7,
+                max_tokens: 100,
+                stream: false
+            })
+        });
 
-                if (!response.ok) throw new Error('API error');
+        if (!response.ok) throw new Error('API error');
 
-                const data = await response.json();
-                const keywords = data.choices[0].content.trim().split('\n');
-                console.log('AI generated keywords:', keywords);
-                return keywords.slice(0, 2); // Đảm bảo chỉ lấy 2 từ khóa
+        const data = await response.json();
+        // Kiểm tra và log response
+        console.log('AI response:', data);
 
-            } catch (error) {
-                console.error('Error getting English keywords:', error);
-                return ['medical healthcare', 'healthcare medical']; // Fallback keywords
-            }
+        // Kiểm tra cấu trúc data
+        if (!data.choices || !data.choices[0] || !data.choices[0].content) {
+            throw new Error('Invalid AI response format');
         }
+
+        const keywords = data.choices[0].content.trim().split('\n');
+        console.log('Generated keywords:', keywords);
+
+        // Đảm bảo luôn trả về đúng 2 từ khóa
+        if (keywords.length < 2) {
+            return [
+                'medical healthcare',
+                'healthcare medical'
+            ];
+        }
+
+        return keywords.slice(0, 2);  // Chỉ lấy 2 từ khóa đầu tiên
+
+    } catch (error) {
+        console.error('Error getting English keywords:', error);
+        // Trả về từ khóa mặc định khi có lỗi
+        return [
+            'medical healthcare',
+            'healthcare medical'
+        ];
+    }
+}
 
         async function fetchPexelsImage(keyword) {
             try {
