@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Simple Chatbot Test</title>
+    <title>Simple Chatbot with Pexels</title>
 </head>
 <body>
     <div>Server URL: <span id="current-url">Loading...</span></div>
@@ -13,19 +13,99 @@
     </div>
 
     <script>
+        const PEXELS_API_KEY = 'YOUR_PEXELS_API_KEY'; // Thay bằng API key của bạn
         let currentEndpoint = '';
         let chatHistory = [];
-        
+
         async function loadConfigurations() {
             try {
                 const apiResponse = await fetch('api_url.txt');
                 if (!apiResponse.ok) throw new Error('Không thể đọc api_url.txt');
                 currentEndpoint = (await apiResponse.text()).trim();
                 document.getElementById('current-url').textContent = currentEndpoint;
-                console.log('Loaded endpoint:', currentEndpoint);
             } catch (error) {
                 console.error('Lỗi khi tải cấu hình:', error);
                 document.getElementById('current-url').textContent = 'Error loading URL';
+            }
+        }
+
+        async function getEnglishKeywords(text) {
+            try {
+                const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    mode: 'cors',
+                    body: JSON.stringify({
+                        model: 'vistral-7b-chat',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: `Create EXACTLY 2 English medical keywords for image search from Vietnamese medical question. Rules:
+- Each keyword should be independent medical term
+- Return ONLY 2 lines, each line contains 1 keyword
+- DO NOT explain, DO NOT add numbers
+- Add 'medical' or 'healthcare' to each keyword
+Format example:
+medical sore throat
+healthcare tonsillitis`
+                            },
+                            {
+                                role: 'user',
+                                content: text
+                            }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 100,
+                        stream: false
+                    })
+                });
+
+                if (!response.ok) throw new Error('API error');
+
+                const data = await response.json();
+                const keywords = data.choices[0].content.trim().split('\n');
+                console.log('AI generated keywords:', keywords);
+                return keywords.slice(0, 2); // Đảm bảo chỉ lấy 2 từ khóa
+
+            } catch (error) {
+                console.error('Error getting English keywords:', error);
+                return ['medical healthcare', 'healthcare medical']; // Fallback keywords
+            }
+        }
+
+        async function fetchPexelsImage(keyword) {
+            try {
+                console.log('Searching Pexels for:', keyword);
+                const response = await fetch(
+                    `https://api.pexels.com/v1/search?query=${encodeURIComponent(keyword)}&per_page=1`,
+                    {
+                        headers: {
+                            'Authorization': PEXELS_API_KEY
+                        }
+                    }
+                );
+
+                if (!response.ok) throw new Error('Pexels API error');
+
+                const data = await response.json();
+                console.log(`Got ${data.photos?.length || 0} results for:`, keyword);
+
+                if (data.photos && data.photos.length > 0) {
+                    const photo = data.photos[0];
+                    return {
+                        url: photo.src.medium,
+                        photographer: photo.photographer,
+                        photographerUrl: photo.photographer_url
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error('Error fetching image:', error);
+                return null;
             }
         }
 
@@ -67,47 +147,8 @@
             return fullResponse;
         }
 
-        function parseQuestions(text) {
-            const questions = [];
-            const lines = text.split('\n');
-            
-            for (const line of lines) {
-                const match = line.trim().match(/^\d+\.\s*(.+)/);
-                if (match) {
-                    const question = match[1].trim();
-                    if (question) {
-                        questions.push(question);
-                    }
-                }
-            }
-            
-            return questions;
-        }
-
-        function createSuggestedButtons(questions, container) {
-            container.innerHTML = '<br>Câu hỏi gợi ý:<br>';
-            
-            questions.forEach((question, index) => {
-                const button = document.createElement('button');
-                button.textContent = question;
-                button.onclick = () => {
-                    document.getElementById('user-input').value = question;
-                    document.getElementById('user-input').focus();
-                };
-                container.appendChild(button);
-                container.appendChild(document.createElement('br'));
-            });
-
-            // Log để debug
-            console.log('Created buttons:', questions.length);
-            console.log('Questions:', questions);
-        }
-
         async function generateSuggestedQuestions(question, answer) {
             try {
-                const suggestionsDiv = document.createElement('div');
-                document.getElementById('chat-messages').appendChild(suggestionsDiv);
-
                 const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
                     method: 'POST',
                     headers: {
@@ -146,53 +187,96 @@ Hãy tạo 5 câu hỏi tiếp theo phù hợp cho người dùng.`
 
                 if (!response.ok) throw new Error('API error: ' + response.status);
 
+                const suggestionsDiv = document.createElement('div');
+                document.getElementById('chat-messages').appendChild(suggestionsDiv);
+
                 const suggestions = await processStreamResponse(response.body.getReader(), suggestionsDiv);
-                const parsedQuestions = parseQuestions(suggestions);
+                const parsedQuestions = suggestions.split('\n')
+                    .filter(line => line.trim() && line.match(/^\d+\./))
+                    .map(line => line.replace(/^\d+\.\s*/, '').trim());
 
-                if (parsedQuestions.length === 5) {
-                    createSuggestedButtons(parsedQuestions, suggestionsDiv);
-                } else {
-                    console.log('Không đủ 5 câu hỏi, thử lại...');
-                    const retryResponse = await fetch(`${currentEndpoint}/v1/chat/completions`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'ngrok-skip-browser-warning': 'true'
-                        },
-                        mode: 'cors',
-                        body: JSON.stringify({
-                            model: 'vistral-7b-chat',
-                            messages: [
-                                {
-                                    role: 'system',
-                                    content: `Bạn là trợ lý y tế. Trả lời chính xác theo format sau:
-1. [câu hỏi về triệu chứng]
-2. [câu hỏi về cách điều trị]
-3. [câu hỏi về cách phòng ngừa]
-4. [câu hỏi về thời điểm cần khám]
-5. [câu hỏi về chế độ sinh hoạt]
+                suggestionsDiv.innerHTML = '<br>Câu hỏi gợi ý:<br>';
+                
+                // Thêm nút yêu cầu trả lời lại
+                const retryButton = document.createElement('button');
+                retryButton.textContent = "Câu trả lời trên không phù hợp, hãy tạo câu trả lời khác";
+                retryButton.onclick = async () => {
+                    try {
+                        const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'ngrok-skip-browser-warning': 'true'
+                            },
+                            mode: 'cors',
+                            body: JSON.stringify({
+                                model: 'vistral-7b-chat',
+                                messages: [
+                                    {
+                                        role: 'system',
+                                        content: 'Hãy tạo câu trả lời mới, chi tiết và dễ hiểu hơn.'
+                                    },
+                                    {
+                                        role: 'user',
+                                        content: question
+                                    }
+                                ],
+                                temperature: 0.7,
+                                max_tokens: 500,
+                                stream: true
+                            })
+                        });
 
-Mỗi câu phải xuống dòng riêng biệt.
-Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng trắc nghiệm.`
-                                },
-                                {
-                                    role: 'user',
-                                    content: `Chủ đề: ${question}\nPhân tích: ${answer}\n\nTạo 5 câu hỏi theo format yêu cầu.`
-                                }
-                            ],
-                            temperature: 0.7,
-                            max_tokens: 500,
-                            stream: true
-                        })
-                    });
+                        if (!response.ok) throw new Error('API error: ' + response.status);
 
-                    if (retryResponse.ok) {
-                        const retrySuggestions = await processStreamResponse(retryResponse.body.getReader(), suggestionsDiv);
-                        const retryQuestions = parseQuestions(retrySuggestions);
-                        createSuggestedButtons(retryQuestions, suggestionsDiv);
+                        const newAnswerDiv = document.createElement('div');
+                        newAnswerDiv.textContent = 'Bot: ';
+                        suggestionsDiv.parentNode.insertBefore(newAnswerDiv, suggestionsDiv);
+
+                        const newAnswer = await processStreamResponse(response.body.getReader(), newAnswerDiv);
+                        
+                        // Tạo từ khóa và lấy hình ảnh mới
+                        const keywords = await getEnglishKeywords(question + ' ' + newAnswer);
+                        const imgContainer = document.createElement('div');
+                        
+                        for (const keyword of keywords) {
+                            const image = await fetchPexelsImage(keyword);
+                            if (image) {
+                                imgContainer.innerHTML += `
+                                    <div style="display: inline-block; margin: 10px;">
+                                        <img src="${image.url}" alt="Medical illustration" style="max-width: 300px"><br>
+                                        <small>Photo by <a href="${image.photographerUrl}" target="_blank">${image.photographer}</a> on Pexels</small>
+                                    </div>
+                                `;
+                            }
+                        }
+                        
+                        if (imgContainer.innerHTML) {
+                            newAnswerDiv.appendChild(imgContainer);
+                        }
+
+                        // Tạo câu hỏi gợi ý mới
+                        await generateSuggestedQuestions(question, newAnswer);
+                    } catch (error) {
+                        console.error('Error:', error);
+                        suggestionsDiv.innerHTML += '<br>Error: ' + error.message;
                     }
-                }
+                };
+                suggestionsDiv.appendChild(retryButton);
+                suggestionsDiv.appendChild(document.createElement('br'));
+
+                // Thêm các nút câu hỏi gợi ý
+                parsedQuestions.forEach(question => {
+                    const button = document.createElement('button');
+                    button.textContent = question;
+                    button.onclick = () => {
+                        document.getElementById('user-input').value = question;
+                        document.getElementById('user-input').focus();
+                    };
+                    suggestionsDiv.appendChild(button);
+                    suggestionsDiv.appendChild(document.createElement('br'));
+                });
 
             } catch (error) {
                 console.error('Error generating suggestions:', error);
@@ -249,10 +333,30 @@ Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng tr�
 
                 const answer = await processStreamResponse(response.body.getReader(), botDiv);
                 
+                // Tạo từ khóa và lấy hình ảnh
+                const keywords = await getEnglishKeywords(message + ' ' + answer);
+                const imgContainer = document.createElement('div');
+                
+                for (const keyword of keywords) {
+                    const image = await fetchPexelsImage(keyword);
+                    if (image) {
+                        imgContainer.innerHTML += `
+                            <div style="display: inline-block; margin: 10px;">
+                                <img src="${image.url}" alt="Medical illustration" style="max-width: 300px"><br>
+                                <small>Photo by <a href="${image.photographerUrl}" target="_blank">${image.photographer}</a> on Pexels</small>
+                            </div>
+                        `;
+                    }
+                }
+                
+                if (imgContainer.innerHTML) {
+                    botDiv.appendChild(imgContainer);
+                }
+                
                 // Add to chat history
                 chatHistory.push({ role: 'assistant', content: answer });
 
-                // Generate suggested questions after getting the answer
+                // Generate suggested questions
                 await generateSuggestedQuestions(message, answer);
 
             } catch (error) {
