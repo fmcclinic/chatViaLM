@@ -13,8 +13,11 @@
     </div>
 
     <script>
+        // Cấu hình
+        const UNSPLASH_ACCESS_KEY = '9De3p3t0U6DWqCLydTFvUMmwahr2B1dsKLGV1GxyZ2s'; // Thay bằng API key của bạn
         let currentEndpoint = '';
         let chatHistory = [];
+        let imageCache = new Map();
         
         async function loadConfigurations() {
             try {
@@ -26,6 +29,41 @@
             } catch (error) {
                 console.error('Lỗi khi tải cấu hình:', error);
                 document.getElementById('current-url').textContent = 'Error loading URL';
+            }
+        }
+
+        async function fetchUnsplashImage(keyword) {
+            if (imageCache.has(keyword)) {
+                return imageCache.get(keyword);
+            }
+
+            try {
+                const searchTerm = `medical ${keyword} illustration`;
+                const response = await fetch(
+                    `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchTerm)}&per_page=1`,
+                    {
+                        headers: {
+                            'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}`
+                        }
+                    }
+                );
+
+                if (!response.ok) throw new Error('Unsplash API error');
+
+                const data = await response.json();
+                if (data.results && data.results.length > 0) {
+                    const image = {
+                        url: data.results[0].urls.small,
+                        author: data.results[0].user.name,
+                        authorUrl: data.results[0].user.links.html
+                    };
+                    imageCache.set(keyword, image);
+                    return image;
+                }
+                return null;
+            } catch (error) {
+                console.error('Error fetching image:', error);
+                return null;
             }
         }
 
@@ -67,6 +105,16 @@
             return fullResponse;
         }
 
+        function extractKeywords(text) {
+            // Đơn giản hóa: lấy 2-3 từ quan trọng nhất
+            const commonWords = new Set(['là', 'và', 'có', 'không', 'các', 'những', 'khi', 'nào', 'gì', 'thế']);
+            const words = text.toLowerCase().split(/\s+/);
+            const keywords = words.filter(word => 
+                word.length > 2 && !commonWords.has(word)
+            ).slice(0, 3);
+            return keywords.join(' ');
+        }
+
         function parseQuestions(text) {
             const questions = [];
             const lines = text.split('\n');
@@ -84,10 +132,72 @@
             return questions;
         }
 
-        function createSuggestedButtons(questions, container) {
+        async function createSuggestedButtons(questions, container, originalQuestion, originalAnswer) {
             container.innerHTML = '<br>Câu hỏi gợi ý:<br>';
             
-            questions.forEach((question, index) => {
+            // Thêm nút yêu cầu trả lời lại
+            const retryButton = document.createElement('button');
+            retryButton.textContent = "Câu trả lời trên không phù hợp, hãy tạo câu trả lời khác";
+            retryButton.onclick = async () => {
+                try {
+                    const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'ngrok-skip-browser-warning': 'true'
+                        },
+                        mode: 'cors',
+                        body: JSON.stringify({
+                            model: 'vistral-7b-chat',
+                            messages: [
+                                {
+                                    role: 'system',
+                                    content: 'Hãy tạo câu trả lời mới, chi tiết và dễ hiểu hơn.'
+                                },
+                                {
+                                    role: 'user',
+                                    content: originalQuestion
+                                }
+                            ],
+                            temperature: 0.7,
+                            max_tokens: 500,
+                            stream: true
+                        })
+                    });
+
+                    if (!response.ok) throw new Error('API error: ' + response.status);
+
+                    const newAnswerDiv = document.createElement('div');
+                    newAnswerDiv.textContent = 'Bot: ';
+                    container.parentNode.insertBefore(newAnswerDiv, container);
+
+                    const newAnswer = await processStreamResponse(response.body.getReader(), newAnswerDiv);
+                    
+                    // Tìm và chèn hình ảnh mới
+                    const keywords = extractKeywords(originalQuestion + ' ' + newAnswer);
+                    const image = await fetchUnsplashImage(keywords);
+                    if (image) {
+                        const imgContainer = document.createElement('div');
+                        imgContainer.innerHTML = `
+                            <img src="${image.url}" alt="Medical illustration" style="max-width: 300px"><br>
+                            <small>Photo by <a href="${image.authorUrl}" target="_blank">${image.author}</a> on Unsplash</small>
+                        `;
+                        newAnswerDiv.appendChild(imgContainer);
+                    }
+
+                    // Tạo câu hỏi gợi ý mới
+                    await generateSuggestedQuestions(originalQuestion, newAnswer);
+                } catch (error) {
+                    console.error('Error:', error);
+                    container.innerHTML += '<br>Error: ' + error.message;
+                }
+            };
+            container.appendChild(retryButton);
+            container.appendChild(document.createElement('br'));
+            
+            // Thêm các nút câu hỏi gợi ý
+            questions.forEach(question => {
                 const button = document.createElement('button');
                 button.textContent = question;
                 button.onclick = () => {
@@ -97,17 +207,10 @@
                 container.appendChild(button);
                 container.appendChild(document.createElement('br'));
             });
-
-            // Log để debug
-            console.log('Created buttons:', questions.length);
-            console.log('Questions:', questions);
         }
 
         async function generateSuggestedQuestions(question, answer) {
             try {
-                const suggestionsDiv = document.createElement('div');
-                document.getElementById('chat-messages').appendChild(suggestionsDiv);
-
                 const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
                     method: 'POST',
                     headers: {
@@ -146,11 +249,14 @@ Hãy tạo 5 câu hỏi tiếp theo phù hợp cho người dùng.`
 
                 if (!response.ok) throw new Error('API error: ' + response.status);
 
+                const suggestionsDiv = document.createElement('div');
+                document.getElementById('chat-messages').appendChild(suggestionsDiv);
+
                 const suggestions = await processStreamResponse(response.body.getReader(), suggestionsDiv);
                 const parsedQuestions = parseQuestions(suggestions);
 
                 if (parsedQuestions.length === 5) {
-                    createSuggestedButtons(parsedQuestions, suggestionsDiv);
+                    await createSuggestedButtons(parsedQuestions, suggestionsDiv, question, answer);
                 } else {
                     console.log('Không đủ 5 câu hỏi, thử lại...');
                     const retryResponse = await fetch(`${currentEndpoint}/v1/chat/completions`, {
@@ -190,7 +296,7 @@ Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng tr�
                     if (retryResponse.ok) {
                         const retrySuggestions = await processStreamResponse(retryResponse.body.getReader(), suggestionsDiv);
                         const retryQuestions = parseQuestions(retrySuggestions);
-                        createSuggestedButtons(retryQuestions, suggestionsDiv);
+                        await createSuggestedButtons(retryQuestions, suggestionsDiv, question, answer);
                     }
                 }
 
@@ -248,6 +354,18 @@ Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng tr�
                 document.getElementById('chat-messages').appendChild(botDiv);
 
                 const answer = await processStreamResponse(response.body.getReader(), botDiv);
+                
+                // Thêm hình ảnh minh họa
+                const keywords = extractKeywords(message + ' ' + answer);
+                const image = await fetchUnsplashImage(keywords);
+                if (image) {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.innerHTML = `
+                        <img src="${image.url}" alt="Medical illustration" style="max-width: 300px"><br>
+                        <small>Photo by <a href="${image.authorUrl}" target="_blank">${image.author}</a> on Unsplash</small>
+                    `;
+                    botDiv.appendChild(imgContainer);
+                }
                 
                 // Add to chat history
                 chatHistory.push({ role: 'assistant', content: answer });
