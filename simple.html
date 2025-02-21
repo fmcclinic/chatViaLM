@@ -5,6 +5,7 @@
     <title>Simple Chatbot Test</title>
 </head>
 <body>
+    <div>Server URL: <span id="current-url">Loading...</span></div>
     <div id="chat-messages"></div>
     <div>
         <input type="text" id="user-input" placeholder="Type your message...">
@@ -12,9 +13,23 @@
     </div>
 
     <script>
-        const currentEndpoint = 'http://localhost:1234';
+        let currentEndpoint = '';
         let chatHistory = [];
         
+        // Load API URL from file
+        async function loadConfigurations() {
+            try {
+                const apiResponse = await fetch('api_url.txt');
+                if (!apiResponse.ok) throw new Error('Không thể đọc api_url.txt');
+                currentEndpoint = (await apiResponse.text()).trim();
+                document.getElementById('current-url').textContent = currentEndpoint;
+                console.log('Loaded endpoint:', currentEndpoint);
+            } catch (error) {
+                console.error('Lỗi khi tải cấu hình:', error);
+                document.getElementById('current-url').textContent = 'Error loading URL';
+            }
+        }
+
         async function processStreamResponse(reader, messageElement) {
             let fullResponse = '';
             const decoder = new TextDecoder();
@@ -104,10 +119,18 @@
 
             } catch (error) {
                 console.error('Error generating suggestions:', error);
+                const errorDiv = document.createElement('div');
+                errorDiv.textContent = 'Error generating suggestions: ' + error.message;
+                document.getElementById('chat-messages').appendChild(errorDiv);
             }
         }
 
         async function sendMessage() {
+            if (!currentEndpoint) {
+                alert('Đang đợi load URL API. Vui lòng thử lại.');
+                return;
+            }
+
             const input = document.getElementById('user-input');
             const message = input.value.trim();
             if (!message) return;
@@ -168,6 +191,11 @@
             if (e.key === 'Enter') {
                 sendMessage();
             }
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadConfigurations();
         });
     </script>
 </body>
