@@ -12,9 +12,9 @@
     </div>
 
     <script>
-        let currentEndpoint = 'http://localhost:1234';
+        const currentEndpoint = 'http://localhost:1234';
+        let chatHistory = [];
         
-        // Process stream response
         async function processStreamResponse(reader, messageElement) {
             let fullResponse = '';
             const decoder = new TextDecoder();
@@ -30,9 +30,12 @@
                     buffer = lines.pop() || '';
 
                     for (const line of lines) {
-                        if (line.startsWith('data: ')) {
+                        if (line.trim() && line.startsWith('data: ')) {
                             try {
-                                const json = JSON.parse(line.slice(5));
+                                const jsonStr = line.replace('data: ', '');
+                                if (jsonStr === '[DONE]') continue;
+                                
+                                const json = JSON.parse(jsonStr);
                                 const token = json?.choices?.[0]?.delta?.content || '';
                                 fullResponse += token;
                                 messageElement.textContent = fullResponse;
@@ -46,10 +49,10 @@
                 console.error('Stream error:', error);
                 messageElement.textContent += '\nError: ' + error.message;
             }
+
             return fullResponse;
         }
 
-        // Generate suggested questions
         async function generateSuggestedQuestions(question, answer) {
             try {
                 const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
@@ -59,35 +62,37 @@
                         'Accept': 'application/json',
                         'ngrok-skip-browser-warning': 'true'
                     },
+                    mode: 'cors',
                     body: JSON.stringify({
                         model: 'vistral-7b-chat',
                         messages: [
                             {
                                 role: 'user',
-                                content: `Given this conversation:\nQuestion: ${question}\nAnswer: ${answer}\n\nSuggest 3 relevant follow-up questions. Make them short and specific. Format them as a numbered list.`
+                                content: `Dựa vào cuộc hội thoại sau:\nCâu hỏi: ${question}\nCâu trả lời: ${answer}\n\nHãy đề xuất 3 câu hỏi tiếp theo ngắn gọn và liên quan. Chỉ trả lời dưới dạng danh sách đánh số.`
                             }
                         ],
                         temperature: 0.7,
+                        max_tokens: 500,
                         stream: true
                     })
                 });
 
-                if (!response.ok) throw new Error('API error');
+                if (!response.ok) throw new Error('API error: ' + response.status);
 
                 const suggestionsDiv = document.createElement('div');
-                suggestionsDiv.className = 'suggestions';
+                suggestionsDiv.innerHTML = '<br>Câu hỏi gợi ý:<br>';
                 document.getElementById('chat-messages').appendChild(suggestionsDiv);
 
                 const suggestions = await processStreamResponse(response.body.getReader(), suggestionsDiv);
                 
                 // Convert suggestions into clickable buttons
                 const lines = suggestions.split('\n');
-                suggestionsDiv.innerHTML = ''; // Clear the text
+                suggestionsDiv.innerHTML = '<br>Câu hỏi gợi ý:<br>'; // Reset content
                 
                 lines.forEach(line => {
                     if (line.trim() && line.match(/^\d/)) {
                         const button = document.createElement('button');
-                        button.textContent = line.replace(/^\d+\.\s*/, '');
+                        button.textContent = line.replace(/^\d+\.\s*/, '').trim();
                         button.onclick = () => {
                             document.getElementById('user-input').value = button.textContent;
                             document.getElementById('user-input').focus();
@@ -102,7 +107,6 @@
             }
         }
 
-        // Send message and get response
         async function sendMessage() {
             const input = document.getElementById('user-input');
             const message = input.value.trim();
@@ -112,6 +116,9 @@
             const userDiv = document.createElement('div');
             userDiv.textContent = 'User: ' + message;
             document.getElementById('chat-messages').appendChild(userDiv);
+            
+            // Add to chat history
+            chatHistory.push({ role: 'user', content: message });
             
             // Clear input
             input.value = '';
@@ -124,21 +131,26 @@
                         'Accept': 'application/json',
                         'ngrok-skip-browser-warning': 'true'
                     },
+                    mode: 'cors',
                     body: JSON.stringify({
                         model: 'vistral-7b-chat',
-                        messages: [{ role: 'user', content: message }],
+                        messages: chatHistory,
                         temperature: 0.7,
+                        max_tokens: 500,
                         stream: true
                     })
                 });
 
-                if (!response.ok) throw new Error('API error');
+                if (!response.ok) throw new Error('API error: ' + response.status);
 
                 const botDiv = document.createElement('div');
                 botDiv.textContent = 'Bot: ';
                 document.getElementById('chat-messages').appendChild(botDiv);
 
                 const answer = await processStreamResponse(response.body.getReader(), botDiv);
+                
+                // Add to chat history
+                chatHistory.push({ role: 'assistant', content: answer });
 
                 // Generate suggested questions after getting the answer
                 await generateSuggestedQuestions(message, answer);
