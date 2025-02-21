@@ -120,25 +120,32 @@
         }
 
         function extractKeywords(text) {
-    // Log text gốc
     console.log('Original text:', text);
 
+    // Mở rộng danh sách từ cần loại bỏ
     const commonWords = new Set([
         'là', 'và', 'có', 'không', 'các', 'những',
         'khi', 'nào', 'gì', 'thế', 'như', 'được',
-        'trong', 'với', 'để', 'hay', 'tại', 'từ'
+        'trong', 'với', 'để', 'hay', 'tại', 'từ',
+        'nên', 'cần', 'phải', 'sẽ', 'bị', 'làm',
+        'thì', 'mà', 'này', 'kia', 'đó'
+    ]);
+
+    // Thêm các từ y tế quan trọng cần giữ lại
+    const medicalTerms = new Set([
+        'đau', 'sốt', 'ho', 'viêm', 'nhức',
+        'nóng', 'lạnh', 'sưng', 'ngứa', 'mệt',
+        'chóng', 'buồn', 'nôn', 'tiêu', 'chảy'
     ]);
 
     const words = text.toLowerCase()
         .split(/\s+/)
         .filter(word => 
-            word.length > 2 && 
-            !commonWords.has(word) && 
-            !word.match(/[0-9]/)
+            (word.length > 2 && !commonWords.has(word)) || // Từ dài và không phải common word
+            medicalTerms.has(word) // hoặc là từ y tế quan trọng
         )
-        .slice(0, 3);
+        .slice(0, 2); // Chỉ lấy 2 từ quan trọng nhất
 
-    // Log các từ sau khi lọc
     console.log('Filtered words:', words);
     const keyword = words.join(' ');
     console.log('Final keyword:', keyword);
