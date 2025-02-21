@@ -6,6 +6,7 @@
     <title>Medical AI chatbot</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* All the CSS from previous version */
         /* Base styles */
         body {
             margin: 0;
@@ -47,6 +48,41 @@
     
         .settings-panel.open {
             transform: translateX(0);
+        }
+
+        /* Settings Panel Buttons */
+        .settings-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 1.2em;
+        }
+
+        .settings-close:hover {
+            color: #333;
+        }
+
+        .settings-toggle {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 8px;
+            font-size: 1.2em;
+            transition: color 0.2s;
+        }
+
+        .settings-toggle:hover {
+            color: #333;
+        }
+
+        .settings-toggle.active {
+            color: #007bff;
         }
     
         /* Overlay */
@@ -278,6 +314,7 @@
         .setting-item label {
             display: block;
             margin-bottom: 5px;
+            color: #666;
         }
     
         .setting-item input[type="range"],
@@ -287,6 +324,7 @@
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            background: #fff;
         }
     
         /* Common button styles */
@@ -297,7 +335,7 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
         }
     
         button:hover {
@@ -307,19 +345,6 @@
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
-        }
-    
-        /* Feedback notification */
-        .feedback-notification {
-            margin-top: 8px;
-            padding: 8px;
-            background: #d4edda;
-            color: #155724;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.9em;
         }
     
         /* Animations */
@@ -391,18 +416,66 @@
                 padding: 6px 10px;
             }
         }
-        
     </style>
 </head>
 <body>
-    <!-- Giữ nguyên HTML từ phiên bản gốc -->
+    <!-- Main container -->
     <div class="settings-overlay"></div>
+    
+    <!-- Settings Panel -->
     <div class="settings-panel">
-        <!-- Settings panel content -->
+        <button class="settings-close" title="Đóng cài đặt">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="settings-group">
+            <h3>Cài đặt Chat</h3>
+            <div class="setting-item">
+                <label>Model</label>
+                <select id="model-select" class="model-select"></select>
+            </div>
+            <div class="setting-item">
+                <label>Temperature</label>
+                <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.5">
+                <span id="temperature-value">0.5</span>
+            </div>
+            <div class="setting-item">
+                <label>Max Tokens</label>
+                <input type="number" id="max-tokens" value="500" min="1" max="2000">
+            </div>
+        </div>
     </div>
 
+    <!-- Chat Container -->
     <div class="chat-container">
-        <!-- Chat container content -->
+        <div class="chat-header">
+            <button class="settings-toggle" id="settings-toggle" title="Mở cài đặt">
+                <i class="fas fa-cog"></i>
+            </button>
+            <h2>Friend Medical Clinic Chatbot</h2>
+            <div class="header-status-group">
+                <div class="connection-status">
+                    <div class="status-indicator" id="status-indicator"></div>
+                    <span id="status-text">Checking...</span>
+                </div>
+                <div class="message-counter">
+                    <i class="fas fa-comments"></i>
+                    <span id="message-count">0/15</span>
+                </div>
+                <button id="restart-chat-btn" title="Bắt đầu lại cuộc trò chuyện">
+                    <i class="fas fa-redo"></i>
+                </button>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="input-area">
+            <input type="text" 
+                   id="user-input" 
+                   placeholder="Nhập câu hỏi của bạn..." 
+                   aria-label="Message input">
+            <button id="send-btn" title="Gửi tin nhắn">
+                <i class="fas fa-paper-plane"></i> Gửi
+            </button>
+        </div>
     </div>
 
     <script>
