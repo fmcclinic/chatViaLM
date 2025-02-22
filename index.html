@@ -649,7 +649,7 @@ async function generateSuggestedQuestions(question, answer) {
         }
 
         // Prompt cho lần thử đầu tiên
-        const initialPrompt = `Bạn là một trợ lý y tế. Hãy đóng vai người dùng tạo câu hỏi theo các nguyên tắc sau:
+        const initialPrompt = `Bạn là một trợ lý y tế. Hãy giúp người dùng tạo các câu hỏi theo các nguyên tắc sau:
 - Tạo CHÍNH XÁC 5 câu hỏi đơn giản và ngắn gọn (dưới 15 từ)
 - KHÔNG sử dụng format trắc nghiệm hay các lựa chọn A,B,C,D
 - Câu hỏi phải thực tế và hữu ích với người bệnh
@@ -1130,7 +1130,7 @@ Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ tr
     </script>
 <script>
     // Debug version để kiểm tra message
-    const FIXED_HEIGHT = 600;
+    const FIXED_HEIGHT = 700;
     
     function sendFixedHeight() {
         // Log trước khi gửi
