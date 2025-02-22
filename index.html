@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Chatbot LM Studio</title>
+    <title>Medical AI chatbot</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* All the CSS from previous version */
         /* Base styles */
         body {
             margin: 0;
@@ -48,6 +49,41 @@
         .settings-panel.open {
             transform: translateX(0);
         }
+
+        /* Settings Panel Buttons */
+        .settings-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 1.2em;
+        }
+
+        .settings-close:hover {
+            color: #333;
+        }
+
+        .settings-toggle {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 8px;
+            font-size: 1.2em;
+            transition: color 0.2s;
+        }
+
+        .settings-toggle:hover {
+            color: #333;
+        }
+
+        .settings-toggle.active {
+            color: #007bff;
+        }
     
         /* Overlay */
         .settings-overlay {
@@ -74,7 +110,7 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            padding-bottom: 120px; /* Tăng padding để tránh che buttons */
+            padding-bottom: 120px;
             position: relative;
         }
     
@@ -144,8 +180,8 @@
             padding: 20px;
             overflow-y: auto;
             background: #fff;
-            margin-bottom: 80px; /* Tạo khoảng cách với fixed input */
-            padding-bottom: 40px; /* Thêm padding dưới */
+            margin-bottom: 80px;
+            padding-bottom: 40px;
         }
     
         /* Message Container */
@@ -178,66 +214,6 @@
             color: #333;
         }
     
-        /* Action Buttons */
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            margin-bottom: 15px; /* Tăng margin dưới */
-            flex-wrap: wrap;
-        }
-    
-        .action-button {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 8px 16px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            background: #fff;
-            color: #333;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 14px;
-            min-height: 36px; /* Đảm bảo chiều cao nhất định */
-        }
-    
-        .action-button:hover {
-            background: #f8f9fa;
-            border-color: #ccc;
-        }
-    
-        .action-button.helpful {
-            color: #28a745;
-            border-color: #28a745;
-        }
-    
-        .action-button.helpful:hover,
-        .action-button.helpful.active {
-            background: #28a745;
-            color: white;
-        }
-    
-        .action-button.regenerate {
-            color: #6c757d;
-            border-color: #6c757d;
-        }
-    
-        .action-button.regenerate:hover {
-            background: #6c757d;
-            color: white;
-        }
-    
-        .action-button.details {
-            color: #17a2b8;
-            border-color: #17a2b8;
-        }
-    
-        .action-button.details:hover {
-            background: #17a2b8;
-            color: white;
-        }
-    
         /* Warning Message */
         .warning-message {
             font-size: 0.9em;
@@ -250,6 +226,51 @@
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        /* Suggested Questions */
+        .suggested-questions {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .suggested-title {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .suggested-button {
+            display: inline-block;
+            margin: 4px;
+            padding: 8px 16px;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9em;
+            color: #495057;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .suggested-button:hover {
+            background: #007bff;
+            color: #fff;
+            border-color: #007bff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+
+        .suggested-button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
     
         /* Input Area */
@@ -293,6 +314,7 @@
         .setting-item label {
             display: block;
             margin-bottom: 5px;
+            color: #666;
         }
     
         .setting-item input[type="range"],
@@ -302,6 +324,7 @@
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            background: #fff;
         }
     
         /* Common button styles */
@@ -312,7 +335,7 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
         }
     
         button:hover {
@@ -324,19 +347,6 @@
             cursor: not-allowed;
         }
     
-        /* Feedback notification */
-        .feedback-notification {
-            margin-top: 8px;
-            padding: 8px;
-            background: #d4edda;
-            color: #155724;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.9em;
-        }
-    
         /* Animations */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-5px); }
@@ -346,7 +356,7 @@
         /* Responsive Styles */
         @media (max-width: 768px) {
             .chat-container {
-                padding-bottom: 150px; /* Tăng padding trên mobile */
+                padding-bottom: 150px;
             }
     
             .chat-header {
@@ -368,7 +378,7 @@
             }
     
             .chat-messages {
-                margin-bottom: 100px; /* Tăng margin trên mobile */
+                margin-bottom: 100px;
                 padding: 10px;
             }
     
@@ -381,14 +391,15 @@
                 padding: 10px;
             }
     
-            .action-buttons {
-                flex-direction: column;
-                margin-bottom: 20px; /* Tăng margin dưới trên mobile */
+            .suggested-questions {
+                margin-top: 10px;
+                padding: 8px;
             }
-    
-            .action-button {
-                width: 100%;
-                justify-content: center;
+
+            .suggested-button {
+                width: calc(100% - 8px);
+                margin: 4px;
+                text-align: left;
             }
     
             .input-area {
@@ -405,10 +416,33 @@
                 padding: 6px 10px;
             }
         }
+
+        .loading-questions {
+    padding: 8px;
+    color: #666;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.suggestion-error {
+    color: #dc3545;
+    padding: 8px;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
     </style>
 </head>
 <body>
+    <!-- Main container -->
     <div class="settings-overlay"></div>
+    
+    <!-- Settings Panel -->
     <div class="settings-panel">
         <button class="settings-close" title="Đóng cài đặt">
             <i class="fas fa-times"></i>
@@ -431,6 +465,7 @@
         </div>
     </div>
 
+    <!-- Chat Container -->
     <div class="chat-container">
         <div class="chat-header">
             <button class="settings-toggle" id="settings-toggle" title="Mở cài đặt">
@@ -444,7 +479,7 @@
                 </div>
                 <div class="message-counter">
                     <i class="fas fa-comments"></i>
-                    <span id="message-count">0/20</span>
+                    <span id="message-count">0/15</span>
                 </div>
                 <button id="restart-chat-btn" title="Bắt đầu lại cuộc trò chuyện">
                     <i class="fas fa-redo"></i>
@@ -463,6 +498,8 @@
         </div>
     </div>
 
+
+
     <script>
         // Global variables
         const MAX_MESSAGES = 15;
@@ -472,166 +509,210 @@
         let availableModels = [];
         let currentModel = 'vistral-7b-chat';
         let isConnected = false;
-    
-        // Khởi tạo các hàm đọc cấu hình
-        async function loadConfigurations() {
-            try {
-                const apiResponse = await fetch('api_url.txt');
-                if (!apiResponse.ok) throw new Error('Không thể đọc api_url.txt');
-                currentEndpoint = (await apiResponse.text()).trim();
-    
-                const promptResponse = await fetch('system_prompt.txt');
-                if (!promptResponse.ok) throw new Error('Không thể đọc system_prompt.txt');
-                systemPrompt = (await promptResponse.text()).trim();
-    
-                console.log('Đã tải cấu hình thành công');
-            } catch (error) {
-                console.error('Lỗi khi tải cấu hình:', error);
-                currentEndpoint = 'http://localhost:1234';
-                systemPrompt = 'You are a helpful AI assistant.';
-            }
-        }
-    
-        // Khởi tạo tính năng settings panel
-        function initializeSettingsPanel() {
-            const settingsToggle = document.getElementById('settings-toggle');
-            const settingsPanel = document.querySelector('.settings-panel');
-            const settingsClose = document.querySelector('.settings-close');
-            const overlay = document.querySelector('.settings-overlay');
-    
-            function toggleSettings() {
-                settingsPanel.classList.toggle('open');
-                overlay.classList.toggle('active');
-                settingsToggle.classList.toggle('active');
-            }
-    
-            function closeSettings() {
-                settingsPanel.classList.remove('open');
-                overlay.classList.remove('active');
-                settingsToggle.classList.remove('active');
-            }
-    
-            settingsToggle.addEventListener('click', toggleSettings);
-            settingsClose.addEventListener('click', closeSettings);
-            overlay.addEventListener('click', closeSettings);
-    
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && settingsPanel.classList.contains('open')) {
-                    closeSettings();
-                }
-            });
-        }
-    
-        // Update message counter
-        function updateMessageCounter() {
-            const counter = document.getElementById('message-count');
-            const count = chatHistory.length;
-            counter.textContent = `${count}/15`;
+
+        // Thêm functions mới cho suggested questions
+        function parseQuestions(text) {
+            const questions = [];
+            const lines = text.split('\n');
             
-            const counterElement = document.querySelector('.message-counter');
-            if (count >= MAX_MESSAGES - 4) {
-                counterElement.classList.add('warning');
-                if (count === MAX_MESSAGES - 1) {
-                    alert('Bạn còn 1 tin nhắn cuối cùng. Hãy bấm nút "Bắt đầu lại" để tạo cuộc trò chuyện mới.');
-                }
-            } else {
-                counterElement.classList.remove('warning');
-            }
-    
-            const inputField = document.getElementById('user-input');
-            const sendButton = document.getElementById('send-btn');
-            if (count >= MAX_MESSAGES) {
-                inputField.disabled = true;
-                sendButton.disabled = true;
-                inputField.placeholder = 'Đã đạt giới hạn tin nhắn. Vui lòng bắt đầu lại.';
-            }
-        }
-    
-        // Welcome message
-        const WELCOME_MESSAGE = `Xin chào! Tôi là chatbot của Friend Medical Clinic. 😊
-    
-    Tôi có thể giúp bạn:
-    • Tư vấn về các vấn đề sức khỏe
-    • Cung cấp thông tin về dịch vụ phòng khám
-    • Hướng dẫn đặt lịch khám
-    
-    ⚠️ Lưu ý quan trọng:
-    • Bạn có tối đa ${MAX_MESSAGES} tin nhắn trong một cuộc trò chuyện
-    • Thông tin tôi cung cấp chỉ mang tính tham khảo
-    • Vui lòng tham khảo ý kiến bác sĩ để có hướng dẫn chính xác nhất
-    • Trong trường hợp khẩn cấp, hãy gọi ngay cho phòng khám: 028 3535 5353
-    
-    Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ trợ bạn tốt nhất! 🌟`;
-    
-        // Handle stream response
-        async function processStreamResponse(reader, botMessageContent) {
-            let botReply = '';
-            const decoder = new TextDecoder();
-            let buffer = '';
-    
-            try {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-    
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop() || '';
-    
-                    for (const line of lines) {
-                        const trimmedLine = line.trim();
-                        
-                        if (!trimmedLine || trimmedLine === 'data: [DONE]') continue;
-                        
-                        if (trimmedLine.startsWith('data: ')) {
-                            try {
-                                const jsonStr = trimmedLine.replace('data: ', '');
-                                if (!jsonStr.trim()) continue;
-                                
-                                const json = JSON.parse(jsonStr);
-                                const token = json?.choices?.[0]?.delta?.content;
-                                
-                                if (token) {
-                                    botReply += token;
-                                    botMessageContent.textContent = botReply;
-                                    scrollToBottom();
-                                }
-                            } catch (e) {
-                                console.debug('Parse error for line:', trimmedLine, e);
-                            }
-                        }
+            for (const line of lines) {
+                const match = line.trim().match(/^\d+\.\s*(.+)/);
+                if (match) {
+                    const question = match[1].trim();
+                    if (question) {
+                        questions.push(question);
                     }
                 }
-            } catch (error) {
-                console.error('Stream processing error:', error);
-                botMessageContent.textContent = 'Có lỗi xảy ra trong quá trình xử lý. Vui lòng thử lại.';
-                throw error;
             }
-    
-            return botReply;
+            
+            return questions;
         }
-    
-        function scrollToBottom() {
-            const chatMessages = document.getElementById('chat-messages');
-            if (chatMessages) {
-                chatMessages.scrollTo({
-                    top: chatMessages.scrollHeight,
-                    behavior: 'smooth'
-                });
+
+        function createSuggestedButtons(questions, container) {
+    // Tạo hoặc tìm container cho suggested questions
+    let suggestedDiv = container.querySelector('.suggested-questions');
+    if (!suggestedDiv) {
+        suggestedDiv = document.createElement('div');
+        suggestedDiv.className = 'suggested-questions';
+        
+        // Thêm tiêu đề
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'suggested-title';
+        titleDiv.innerHTML = '<i class="fas fa-lightbulb"></i> Câu hỏi gợi ý:';
+        suggestedDiv.appendChild(titleDiv);
+
+        // Thêm loading indicator
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'loading-questions';
+        loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo câu hỏi gợi ý...';
+        suggestedDiv.appendChild(loadingDiv);
+        
+        container.appendChild(suggestedDiv);
+    }
+
+    // Xóa loading indicator nếu đã có đủ 5 câu hỏi
+    if (questions.length === 5) {
+        const loadingDiv = suggestedDiv.querySelector('.loading-questions');
+        if (loadingDiv) {
+            loadingDiv.remove();
+        }
+    }
+
+    // Tạo và thêm từng button với animation
+    questions.forEach((question, index) => {
+        // Kiểm tra nếu câu hỏi đã tồn tại
+        const existingButtons = suggestedDiv.querySelectorAll('.suggested-button');
+        const questionExists = Array.from(existingButtons).some(btn => btn.textContent === question);
+        
+        if (!questionExists) {
+            const button = document.createElement('button');
+            button.className = 'suggested-button';
+            button.textContent = question;
+            button.onclick = () => {
+                document.getElementById('user-input').value = question;
+                document.getElementById('user-input').focus();
+            };
+            
+            // Set initial state cho animation
+            button.style.opacity = '0';
+            button.style.transform = 'translateY(10px)';
+            suggestedDiv.appendChild(button);
+
+            // Trigger animation với delay tăng dần
+            setTimeout(() => {
+                button.style.transition = 'all 0.3s ease';
+                button.style.opacity = '1';
+                button.style.transform = 'translateY(0)';
+                // Scroll đến button mới
+                button.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100 * index);
+        }
+    });
+
+    return suggestedDiv;
+}
+
+async function generateSuggestedQuestions(question, answer) {
+    try {
+        // Tìm container của tin nhắn bot cuối cùng
+        const messageContainer = document.querySelector('.bot-message:last-child');
+        if (!messageContainer) return [];
+
+        // Tạo container với loading indicator ngay từ đầu
+        let suggestedDiv = createSuggestedButtons([], messageContainer);
+
+        // Hàm helper để gửi request và xử lý response
+        async function makeRequest(prompt, isRetry = false) {
+            const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                mode: 'cors',
+                body: JSON.stringify({
+                    model: currentModel,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: prompt
+                        },
+                        {
+                            role: 'user',
+                            content: isRetry ? 
+                                `Chủ đề: ${question}\nPhân tích: ${answer}\n\nTạo 5 câu hỏi theo format yêu cầu.` :
+                                `Dựa vào cuộc hội thoại sau:\nCâu hỏi: ${question}\nCâu trả lời: ${answer}\n\nHãy tạo 5 câu hỏi tiếp theo phù hợp cho người dùng.`
+                        }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 500,
+                    stream: true
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(isRetry ? 'Retry API error: ' : 'API error: ' + response.status);
             }
+
+            // Xử lý response stream và cập nhật UI
+            const tempDiv = document.createElement('div');
+            const suggestions = await processStreamResponse(response.body.getReader(), tempDiv);
+            const parsedQuestions = parseQuestions(suggestions);
+
+            // Cập nhật UI với các câu hỏi mới
+            if (parsedQuestions.length > 0) {
+                createSuggestedButtons(parsedQuestions, messageContainer);
+            }
+
+            return parsedQuestions;
         }
-    
+
+        // Prompt cho lần thử đầu tiên
+        const initialPrompt = `Bạn là một trợ lý y tế. Hãy tạo câu hỏi cho người dùng theo các nguyên tắc sau:
+- Tạo CHÍNH XÁC 5 câu hỏi đơn giản và ngắn gọn (dưới 15 từ)
+- KHÔNG sử dụng format trắc nghiệm hay các lựa chọn A,B,C,D
+- Câu hỏi phải thực tế và hữu ích với người bệnh
+- Tập trung vào: triệu chứng, phân độ nặng, cách điều trị, phòng ngừa, khi nào cần khám
+- Trả lời dưới dạng danh sách đánh số từ 1-5, mỗi câu một dòng riêng biệt
+- Chỉ viết câu hỏi, không thêm bất kỳ nội dung nào khác`;
+
+        // Thử lần đầu
+        let questions = await makeRequest(initialPrompt);
+
+        // Nếu không đủ 5 câu, thử lại với prompt cụ thể hơn
+        if (questions.length < 5) {
+            const retryPrompt = `Bạn là trợ lý y tế. Trả lời chính xác theo format sau:
+1. [câu hỏi về triệu chứng]
+2. [câu hỏi về cách điều trị]
+3. [câu hỏi về cách phòng ngừa]
+4. [câu hỏi về thời điểm cần khám]
+5. [câu hỏi về chế độ sinh hoạt]
+6. [câu hỏi về phân độ nặng]
+
+Mỗi câu phải xuống dòng riêng biệt.
+Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng trắc nghiệm.`;
+
+            questions = await makeRequest(retryPrompt, true);
+        }
+
+        return questions;
+
+    } catch (error) {
+        console.error('Error generating suggestions:', error);
+        
+        // Hiển thị thông báo lỗi trong UI
+        const messageContainer = document.querySelector('.bot-message:last-child');
+        if (messageContainer) {
+            // Xóa loading indicator nếu có
+            const loadingDiv = messageContainer.querySelector('.loading-questions');
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+
+            // Thêm thông báo lỗi
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'suggestion-error';
+            errorDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Không thể tạo câu hỏi gợi ý. Vui lòng thử lại sau.';
+            messageContainer.appendChild(errorDiv);
+        }
+        
+        return [];
+    }
+}
+
+        // Modify existing functions to integrate suggested questions
         function createMessageElement(isUser, text, messageId) {
             const container = document.createElement('div');
             container.className = `message-container ${isUser ? 'user-message' : 'bot-message'}`;
             container.dataset.messageId = messageId;
-    
+
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
             messageDiv.textContent = text;
-    
+
             container.appendChild(messageDiv);
-    
+
             if (!isUser) {
                 const warningDiv = document.createElement('div');
                 warningDiv.className = 'warning-message';
@@ -640,203 +721,47 @@
                     Lưu ý: Thông tin trên do AI tạo ra, có thể không chính xác. Vui lòng tham khảo ý kiến bác sĩ để có hướng dẫn chính xác nhất.
                 `;
                 container.appendChild(warningDiv);
-    
-                // Tạo container cho các nút
-                const actionsDiv = document.createElement('div');
-                actionsDiv.className = 'action-buttons';
-                
-                // Thêm 3 nút chức năng
-                const buttons = [
-                    {
-                        text: '👍 Hữu ích',
-                        class: 'helpful',
-                        onClick: () => handleFeedback(messageId, 'up')
-                    },
-                    {
-                        text: '🔄 Trả lời lại',
-                        class: 'regenerate',
-                        onClick: () => regenerateResponse(messageId)
-                    },
-                    {
-                        text: '💬 Chi tiết hơn',
-                        class: 'details',
-                        onClick: () => askFollowUp(messageId)
-                    }
-                ];
-    
-                buttons.forEach(btn => {
-                    const button = document.createElement('button');
-                    button.className = `action-button ${btn.class}`;
-                    button.textContent = btn.text;
-                    button.addEventListener('click', btn.onClick);
-                    actionsDiv.appendChild(button);
-                });
-    
-                container.appendChild(actionsDiv);
             }
-    
+
             return container;
         }
-    
-        function loadChatHistory() {
-            const container = document.getElementById('chat-messages');
-            container.innerHTML = '';
-            
-            if (chatHistory.length === 0) {
-                const welcomeMessageId = Date.now().toString();
-                const messageElement = createMessageElement(false, WELCOME_MESSAGE, welcomeMessageId);
-                container.appendChild(messageElement);
-                
-                chatHistory.push({
-                    id: welcomeMessageId,
-                    role: 'assistant',
-                    content: WELCOME_MESSAGE
-                });
-                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-            } else {
-                chatHistory.forEach(msg => {
-                    const messageElement = createMessageElement(msg.role === 'user', msg.content, msg.id);
-                    container.appendChild(messageElement);
-                });
+
+        // Modify sendMessage to include suggested questions
+        async function sendMessage() {
+            if (!isConnected) {
+                alert('Vui lòng kiểm tra kết nối đến API endpoint.');
+                return;
             }
-            scrollToBottom();
-            updateMessageCounter();
-        }
-    
-        function restartChat() {
-            if (confirm('Bạn có muốn bắt đầu cuộc trò chuyện mới không?')) {
-                chatHistory = [];
-                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                loadChatHistory();
-                
-                const inputField = document.getElementById('user-input');
-                const sendButton = document.getElementById('send-btn');
-                inputField.disabled = false;
-                sendButton.disabled = false;
-                inputField.placeholder = 'Nhập câu hỏi của bạn...';
-                inputField.focus();
+
+            if (chatHistory.length >= MAX_MESSAGES) {
+                alert('Bạn đã đạt giới hạn tin nhắn. Vui lòng bắt đầu cuộc trò chuyện mới.');
+                return;
             }
-        }
-    
-        async function handleFeedback(messageId, feedback) {
-            const container = document.querySelector(`[data-message-id="${messageId}"]`);
-            const buttons = container.querySelectorAll('.action-button');
-            
-            // Remove any existing feedback notifications
-            container.querySelectorAll('.feedback-notification').forEach(el => el.remove());
-    
-            // Update button states
-            buttons.forEach(btn => {
-                if (btn.classList.contains('helpful')) {
-                    btn.classList.toggle('active', feedback === 'up');
-                }
-            });
-    
-            const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
-            if (messageIndex !== -1) {
-                chatHistory[messageIndex].feedback = feedback;
-                
-                if (feedback === 'up') {
-                    // Show thank you message
-                    const thankYouDiv = document.createElement('div');
-                    thankYouDiv.className = 'feedback-notification';
-                    thankYouDiv.innerHTML = '<i class="fas fa-heart"></i> Cảm ơn phản hồi của bạn!';
-                    container.appendChild(thankYouDiv);
-                    
-                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                }
-            }
-        }
-    
-        function askFollowUp(messageId) {
-            const input = document.getElementById('user-input');
-            input.value = "Hãy cung cấp thêm thông tin chi tiết và đầy đủ hơn về nội dung trên";
-            input.focus();
-            input.setSelectionRange(input.value.length, input.value.length);
-        }
-    
-        async function checkConnection() {
-            const indicator = document.getElementById('status-indicator');
-            const statusText = document.getElementById('status-text');
-    
+
+            const inputField = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-btn');
+            const userText = inputField.value.trim();
+
+            if (!userText) return;
+
             try {
-                const response = await fetch(`${currentEndpoint}/v1/models`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    mode: 'cors'
+                sendButton.disabled = true;
+                sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                const messageId = Date.now().toString();
+                const messageElement = createMessageElement(true, userText, messageId);
+                document.getElementById('chat-messages').appendChild(messageElement);
+
+                inputField.value = '';
+
+                chatHistory.push({ 
+                    id: messageId,
+                    role: 'user', 
+                    content: userText 
                 });
-    
-                const data = await response.json();
-    
-                if (!data || !data.data) {
-                    throw new Error('Invalid API response format');
-                }
-    
-                if (Array.isArray(data.data)) {
-                    availableModels = data.data;
-                    updateModelSelects();
-                }
-    
-                isConnected = true;
-                indicator.className = 'status-indicator status-online';
-                statusText.textContent = 'Đã kết nối';
-                return data;
-    
-            } catch (error) {
-                isConnected = false;
-                indicator.className = 'status-indicator status-offline';
-                statusText.textContent = `Lỗi kết nối: ${error.message}`;
-                console.error('Connection error:', error);
-                throw error;
-            }
-        }
-    
-        function updateModelSelects() {
-            const modelSelect = document.getElementById('model-select');
-            modelSelect.innerHTML = availableModels
-                .map(model => `<option value="${model.id}" ${model.id === currentModel ? 'selected' : ''}>${model.id}</option>`)
-                .join('');
-        }
-    
-        function handleModelChange(e) {
-            currentModel = e.target.value;
-        }
-    
-        function handleTemperatureChange(e) {
-            document.getElementById('temperature-value').textContent = e.target.value;
-        }
-    
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
-    
-        async function regenerateResponse(messageId) {
-            const messageIndex = chatHistory.findIndex(msg => msg.id === messageId);
-            if (messageIndex === -1) return;
-    
-            try {
-                const lastUserMessage = chatHistory[messageIndex - 1];
-                if (!lastUserMessage || lastUserMessage.role !== 'user') return;
-    
-                // Remove the old bot message and subsequent messages
-                chatHistory = chatHistory.slice(0, messageIndex);
-                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                
-                const oldMessage = document.querySelector(`[data-message-id="${messageId}"]`);
-                if (oldMessage) {
-                    const loadingNote = document.createElement('div');
-                    loadingNote.className = 'regenerating-note';
-                    loadingNote.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo câu trả lời mới...';
-                    oldMessage.appendChild(loadingNote);
-                }
-    
+
+                updateMessageCounter();
+
                 const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
                     method: 'POST',
                     headers: {
@@ -851,205 +776,357 @@
                             {
                                 role: 'system',
                                 content: systemPrompt
-                        },
-                        ...chatHistory
-                    ],
-                    temperature: parseFloat(document.getElementById('temperature').value),
-                    max_tokens: parseInt(document.getElementById('max-tokens').value),
-                    stream: true
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-            }
-
-            const botMessageId = Date.now().toString();
-            const botMessage = createMessageElement(false, '', botMessageId);
-            
-            if (oldMessage) {
-                oldMessage.replaceWith(botMessage);
-            }
-            
-            const botMessageContent = botMessage.querySelector('.message');
-            const botReply = await processStreamResponse(response.body.getReader(), botMessageContent);
-
-            if (botReply.trim()) {
-                chatHistory.push({ 
-                    id: botMessageId,
-                    role: 'assistant', 
-                    content: botReply 
+                            },
+                            ...chatHistory
+                        ],
+                        temperature: parseFloat(document.getElementById('temperature').value),
+                        max_tokens: parseInt(document.getElementById('max-tokens').value),
+                        stream: true
+                    })
                 });
-                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                updateMessageCounter();
-            }
 
-        } catch (error) {
-            console.error('Error in regenerateResponse:', error);
-            const errorMessage = createMessageElement(
-                false, 
-                `Lỗi: Không thể tạo lại câu trả lời. ${error.message}`, 
-                Date.now().toString()
-            );
-            const oldMessage = document.querySelector(`[data-message-id="${messageId}"]`);
-            if (oldMessage) {
-                oldMessage.replaceWith(errorMessage);
-            }
-        }
-    }
-
-    async function sendMessage() {
-        if (!isConnected) {
-            alert('Vui lòng kiểm tra kết nối đến API endpoint.');
-            return;
-        }
-
-        if (chatHistory.length >= MAX_MESSAGES) {
-            alert('Bạn đã đạt giới hạn tin nhắn. Vui lòng bắt đầu cuộc trò chuyện mới.');
-            return;
-        }
-
-        const inputField = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-btn');
-        const userText = inputField.value.trim();
-
-        if (!userText) return;
-
-        try {
-            sendButton.disabled = true;
-            sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-            const messageId = Date.now().toString();
-            const messageElement = createMessageElement(true, userText, messageId);
-            document.getElementById('chat-messages').appendChild(messageElement);
-
-            // Clear input immediately
-            inputField.value = '';
-
-            chatHistory.push({ 
-                id: messageId,
-                role: 'user', 
-                content: userText 
-            });
-
-            updateMessageCounter();
-
-            const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'ngrok-skip-browser-warning': 'true'
-                },
-                mode: 'cors',
-                body: JSON.stringify({
-                    model: currentModel,
-                    messages: [
-                        {
-                            role: 'system',
-                            content: systemPrompt
-                        },
-                        ...chatHistory
-                    ],
-                    temperature: parseFloat(document.getElementById('temperature').value),
-                    max_tokens: parseInt(document.getElementById('max-tokens').value),
-                    stream: true
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-            }
-
-            const botMessageId = Date.now().toString();
-            const botMessage = createMessageElement(false, '', botMessageId);
-            document.getElementById('chat-messages').appendChild(botMessage);
-            const botMessageContent = botMessage.querySelector('.message');
-
-            const botReply = await processStreamResponse(response.body.getReader(), botMessageContent);
-
-            if (botReply.trim()) {
-                chatHistory.push({ 
-                    id: botMessageId,
-                    role: 'assistant', 
-                    content: botReply 
-                });
-                
-                if (chatHistory.length > MAX_MESSAGES) {
-                    chatHistory = chatHistory.slice(-MAX_MESSAGES);
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
                 }
-                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-                updateMessageCounter();
+
+                const botMessageId = Date.now().toString();
+                const botMessage = createMessageElement(false, '', botMessageId);
+                document.getElementById('chat-messages').appendChild(botMessage);
+                const botMessageContent = botMessage.querySelector('.message');
+
+                const botReply = await processStreamResponse(response.body.getReader(), botMessageContent);
+
+                if (botReply.trim()) {
+                    chatHistory.push({ 
+                        id: botMessageId,
+                        role: 'assistant', 
+                        content: botReply 
+                    });
+                    
+                    if (chatHistory.length > MAX_MESSAGES) {
+                        chatHistory = chatHistory.slice(-MAX_MESSAGES);
+                    }
+                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+                    updateMessageCounter();
+
+                    // Generate and add suggested questions
+                    const suggestedQuestions = await generateSuggestedQuestions(userText, botReply);
+                    if (suggestedQuestions.length > 0) {
+                        createSuggestedButtons(suggestedQuestions, botMessage);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error in sendMessage:', error);
+                const errorMessage = createMessageElement(
+                    false, 
+                    `Lỗi: ${error.message}. Vui lòng thử lại.`, 
+                    Date.now().toString()
+                );
+                document.getElementById('chat-messages').appendChild(errorMessage);
+            } finally {
+                sendButton.disabled = false;
+                sendButton.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi';
+                inputField.focus();
+            }
+        }
+
+        // Handle message stream processing
+        async function processStreamResponse(reader, botMessageContent, isGeneratingSuggestions = false) {
+    let fullResponse = '';
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let currentQuestions = [];
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+                if (line.trim() && line.startsWith('data: ')) {
+                    try {
+                        const jsonStr = line.replace('data: ', '');
+                        if (jsonStr === '[DONE]') continue;
+                        
+                        const json = JSON.parse(jsonStr);
+                        const token = json?.choices?.[0]?.delta?.content || '';
+                        fullResponse += token;
+
+                        // Nếu đang tạo câu hỏi gợi ý, không cập nhật vào botMessageContent
+                        if (!isGeneratingSuggestions) {
+                            botMessageContent.textContent = fullResponse;
+                        }
+
+                        // Xử lý câu hỏi gợi ý nếu cần
+                        if (isGeneratingSuggestions && token.includes('\n')) {
+                            const newQuestions = parseQuestions(fullResponse);
+                            const newlyAddedQuestions = newQuestions.filter(
+                                q => !currentQuestions.includes(q)
+                            );
+
+                            if (newlyAddedQuestions.length > 0) {
+                                const messageContainer = botMessageContent.closest('.message-container');
+                                if (messageContainer) {
+                                    createSuggestedButtons(newlyAddedQuestions, messageContainer);
+                                    currentQuestions = newQuestions;
+                                }
+                            }
+                        }
+
+                        scrollToBottom();
+                    } catch (e) {
+                        console.debug('Parse error for line:', line, e);
+                    }
+                }
+            }
+        }
+
+        // Xử lý buffer còn lại
+        if (buffer && isGeneratingSuggestions) {
+            const lastQuestions = parseQuestions(buffer);
+            if (lastQuestions.length > 0) {
+                const messageContainer = botMessageContent.closest('.message-container');
+                if (messageContainer) {
+                    createSuggestedButtons(lastQuestions, messageContainer);
+                }
+            }
+        }
+
+    } catch (error) {
+        console.error('Stream processing error:', error);
+        if (!isGeneratingSuggestions) {
+            botMessageContent.textContent += '\nError: ' + error.message;
+        }
+        throw error;
+    }
+
+    return fullResponse;
+}
+
+        function scrollToBottom() {
+            const chatMessages = document.getElementById('chat-messages');
+            if (chatMessages) {
+                chatMessages.scrollTo({
+                    top: chatMessages.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        function updateMessageCounter() {
+            const counter = document.getElementById('message-count');
+            const count = chatHistory.length;
+            counter.textContent = `${count}/${MAX_MESSAGES}`;
+            
+            const counterElement = document.querySelector('.message-counter');
+            if (count >= MAX_MESSAGES - 4) {
+                counterElement.classList.add('warning');
+                if (count === MAX_MESSAGES - 1) {
+                    alert('Bạn còn 1 tin nhắn cuối cùng. Hãy bấm nút "Bắt đầu lại" để tạo cuộc trò chuyện mới.');
+                }
+            } else {
+                counterElement.classList.remove('warning');
             }
 
-        } catch (error) {
-            console.error('Error in sendMessage:', error);
-            const errorMessage = createMessageElement(
-                false, 
-                `Lỗi: ${error.message}. Vui lòng thử lại.`, 
-                Date.now().toString()
-            );
-            document.getElementById('chat-messages').appendChild(errorMessage);
-        } finally {
-            sendButton.disabled = false;
-            sendButton.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi';
-            inputField.focus();
+            const inputField = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-btn');
+            if (count >= MAX_MESSAGES) {
+                inputField.disabled = true;
+                sendButton.disabled = true;
+                inputField.placeholder = 'Đã đạt giới hạn tin nhắn. Vui lòng bắt đầu lại.';
+            }
         }
-    }
 
-    // Initialize
-    document.addEventListener('DOMContentLoaded', async () => {
-        await loadConfigurations();
-        initializeSettingsPanel();
-        const inputField = document.getElementById('user-input');
-        if (inputField) {
-            inputField.focus();
-            inputField.scrollIntoView({ behavior: 'smooth' });
+        function restartChat() {
+            if (confirm('Bạn có muốn bắt đầu cuộc trò chuyện mới không?')) {
+                chatHistory = [];
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+                loadChatHistory();
+                
+                const inputField = document.getElementById('user-input');
+                const sendButton = document.getElementById('send-btn');
+                inputField.disabled = false;
+                sendButton.disabled = false;
+                inputField.placeholder = 'Nhập câu hỏi của bạn...';
+                inputField.focus();
+            }
         }
-        document.getElementById('send-btn').addEventListener('click', sendMessage);
-        document.getElementById('restart-chat-btn').addEventListener('click', restartChat);
-        document.getElementById('user-input').addEventListener('keypress', handleKeyPress);
-        document.getElementById('temperature').addEventListener('input', handleTemperatureChange);
-        document.getElementById('model-select').addEventListener('change', handleModelChange);
 
-        loadChatHistory();
-        checkConnection();
-        updateMessageCounter();
-    });
-</script>
+        // Initialize settings panel functionality
+        function initializeSettingsPanel() {
+            const settingsToggle = document.getElementById('settings-toggle');
+            const settingsPanel = document.querySelector('.settings-panel');
+            const settingsClose = document.querySelector('.settings-close');
+            const overlay = document.querySelector('.settings-overlay');
 
-<script>
-    // Debug version để kiểm tra message
-    const FIXED_HEIGHT = 800;
-    
-    function sendFixedHeight() {
-        // Log trước khi gửi
-        console.log('Sending height:', FIXED_HEIGHT);
-        
-        // Gửi message
-        window.parent.postMessage(
-            { height: FIXED_HEIGHT },
-            '*'  // Tạm thời dùng '*' để test
-        );
-    }
-    
-    // Kiểm tra khi page load
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOMContentLoaded triggered');
-        sendFixedHeight();
-        
-        // Gửi lại sau một khoảng thời gian
-        setTimeout(() => {
-            console.log('Delayed height send triggered');
-            sendFixedHeight();
-        }, 300);
-    });
-    
-    // Log khi click nút restart
-    document.getElementById('restart-chat-btn')?.addEventListener('click', () => {
-        console.log('Restart button clicked');
-        setTimeout(sendFixedHeight, 100);
-    });
+            function toggleSettings() {
+                settingsPanel.classList.toggle('open');
+                overlay.classList.toggle('active');
+                settingsToggle.classList.toggle('active');
+            }
+
+            function closeSettings() {
+                settingsPanel.classList.remove('open');
+                overlay.classList.remove('active');
+                settingsToggle.classList.remove('active');
+            }
+
+            settingsToggle.addEventListener('click', toggleSettings);
+            settingsClose.addEventListener('click', closeSettings);
+            overlay.addEventListener('click', closeSettings);
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && settingsPanel.classList.contains('open')) {
+                    closeSettings();
+                }
+            });
+        }
+
+        // Load chat history
+        function loadChatHistory() {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = '';
+            
+            if (chatHistory.length === 0) {
+                const welcomeMessageId = Date.now().toString();
+                const initialMessage = `Xin chào! Tôi là chatbot của Friend Medical Clinic. 😊
+Tôi có thể giúp bạn:
+• Tư vấn về các vấn đề sức khỏe
+• Cung cấp thông tin về dịch vụ phòng khám
+• Hướng dẫn đặt lịch khám
+⚠️ Lưu ý quan trọng:
+• Bạn có tối đa ${MAX_MESSAGES} tin nhắn trong một cuộc trò chuyện
+• Thông tin tôi cung cấp chỉ mang tính tham khảo
+• Vui lòng tham khảo ý kiến bác sĩ để có hướng dẫn chính xác nhất
+• Trong trường hợp khẩn cấp, hãy gọi ngay cho phòng khám: 028 3535 5353
+Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ trợ bạn tốt nhất! 🌟`;
+
+                const messageElement = createMessageElement(false, initialMessage, welcomeMessageId);
+                container.appendChild(messageElement);
+                
+                chatHistory.push({
+                    id: welcomeMessageId,
+                    role: 'assistant',
+                    content: initialMessage
+                });
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            } else {
+                chatHistory.forEach(msg => {
+                    const messageElement = createMessageElement(msg.role === 'user', msg.content, msg.id);
+                    container.appendChild(messageElement);
+                });
+            }
+            scrollToBottom();
+            updateMessageCounter();
+        }
+
+        // Check API connection
+        async function checkConnection() {
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+
+            try {
+                const response = await fetch(`${currentEndpoint}/v1/models`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    mode: 'cors'
+                });
+
+                const data = await response.json();
+
+                if (!data || !data.data) {
+                    throw new Error('Invalid API response format');
+                }
+
+                if (Array.isArray(data.data)) {
+                    availableModels = data.data;
+                    updateModelSelects();
+                }
+
+                isConnected = true;
+                indicator.className = 'status-indicator status-online';
+                statusText.textContent = 'Đã kết nối';
+                return data;
+
+            } catch (error) {
+                isConnected = false;
+                indicator.className = 'status-indicator status-offline';
+                statusText.textContent = `Lỗi kết nối: ${error.message}`;
+                console.error('Connection error:', error);
+                throw error;
+            }
+        }
+
+        // Update model selection
+        function updateModelSelects() {
+            const modelSelect = document.getElementById('model-select');
+            modelSelect.innerHTML = availableModels
+                .map(model => `<option value="${model.id}" ${model.id === currentModel ? 'selected' : ''}>${model.id}</option>`)
+                .join('');
+        }
+
+        function handleModelChange(e) {
+            currentModel = e.target.value;
+        }
+
+        function handleTemperatureChange(e) {
+            document.getElementById('temperature-value').textContent = e.target.value;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // Load configurations
+        async function loadConfigurations() {
+            try {
+                const apiResponse = await fetch('api_url.txt');
+                if (!apiResponse.ok) throw new Error('Không thể đọc api_url.txt');
+                currentEndpoint = (await apiResponse.text()).trim();
+
+                const promptResponse = await fetch('system_prompt.txt');
+                if (!promptResponse.ok) throw new Error('Không thể đọc system_prompt.txt');
+                systemPrompt = (await promptResponse.text()).trim();
+
+                console.log('Đã tải cấu hình thành công');
+            } catch (error) {
+                console.error('Lỗi khi tải cấu hình:', error);
+                currentEndpoint = 'http://localhost:1234';
+                systemPrompt = 'You are a helpful AI assistant.';
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadConfigurations();
+            initializeSettingsPanel();
+            const inputField = document.getElementById('user-input');
+            if (inputField) {
+                inputField.focus();
+                inputField.scrollIntoView({ behavior: 'smooth' });
+            }
+            document.getElementById('send-btn').addEventListener('click', sendMessage);
+            document.getElementById('restart-chat-btn').addEventListener('click', restartChat);
+            document.getElementById('user-input').addEventListener('keypress', handleKeyPress);
+            document.getElementById('temperature').addEventListener('input', handleTemperatureChange);
+            document.getElementById('model-select').addEventListener('change', handleModelChange);
+
+            loadChatHistory();
+            checkConnection();
+            updateMessageCounter();
+        });
     </script>
 
 </body>
