@@ -649,11 +649,11 @@ async function generateSuggestedQuestions(question, answer) {
         }
 
         // Prompt cho lần thử đầu tiên
-        const initialPrompt = `Bạn là một trợ lý y tế. Hãy tạo câu hỏi theo các nguyên tắc sau:
+        const initialPrompt = `Bạn là một trợ lý y tế. Hãy tạo câu hỏi cho người dùng theo các nguyên tắc sau:
 - Tạo CHÍNH XÁC 5 câu hỏi đơn giản và ngắn gọn (dưới 15 từ)
 - KHÔNG sử dụng format trắc nghiệm hay các lựa chọn A,B,C,D
 - Câu hỏi phải thực tế và hữu ích với người bệnh
-- Tập trung vào: triệu chứng, cách điều trị, phòng ngừa, khi nào cần khám
+- Tập trung vào: triệu chứng, phân độ nặng, cách điều trị, phòng ngừa, khi nào cần khám
 - Trả lời dưới dạng danh sách đánh số từ 1-5, mỗi câu một dòng riêng biệt
 - Chỉ viết câu hỏi, không thêm bất kỳ nội dung nào khác`;
 
@@ -668,6 +668,7 @@ async function generateSuggestedQuestions(question, answer) {
 3. [câu hỏi về cách phòng ngừa]
 4. [câu hỏi về thời điểm cần khám]
 5. [câu hỏi về chế độ sinh hoạt]
+6. [câu hỏi về phân độ nặng]
 
 Mỗi câu phải xuống dòng riêng biệt.
 Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng trắc nghiệm.`;
