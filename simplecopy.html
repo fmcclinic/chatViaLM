@@ -416,6 +416,26 @@
                 padding: 6px 10px;
             }
         }
+
+        .loading-questions {
+    padding: 8px;
+    color: #666;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.suggestion-error {
+    color: #dc3545;
+    padding: 8px;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
     </style>
 </head>
 <body>
@@ -478,7 +498,7 @@
         </div>
     </div>
 
-    
+
 
     <script>
         // Global variables
@@ -509,90 +529,140 @@
         }
 
         function createSuggestedButtons(questions, container) {
-            const suggestedDiv = document.createElement('div');
-            suggestedDiv.className = 'suggested-questions';
-            
-            const titleDiv = document.createElement('div');
-            titleDiv.className = 'suggested-title';
-            titleDiv.innerHTML = '<i class="fas fa-lightbulb"></i> Câu hỏi gợi ý:';
-            suggestedDiv.appendChild(titleDiv);
+    // Tạo hoặc tìm container cho suggested questions
+    let suggestedDiv = container.querySelector('.suggested-questions');
+    if (!suggestedDiv) {
+        suggestedDiv = document.createElement('div');
+        suggestedDiv.className = 'suggested-questions';
+        
+        // Thêm tiêu đề
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'suggested-title';
+        titleDiv.innerHTML = '<i class="fas fa-lightbulb"></i> Câu hỏi gợi ý:';
+        suggestedDiv.appendChild(titleDiv);
 
-            questions.forEach((question) => {
-                const button = document.createElement('button');
-                button.className = 'suggested-button';
-                button.textContent = question;
-                button.onclick = () => {
-                    document.getElementById('user-input').value = question;
-                    document.getElementById('user-input').focus();
-                };
-                suggestedDiv.appendChild(button);
+        // Thêm loading indicator
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'loading-questions';
+        loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo câu hỏi gợi ý...';
+        suggestedDiv.appendChild(loadingDiv);
+        
+        container.appendChild(suggestedDiv);
+    }
+
+    // Xóa loading indicator nếu đã có đủ 5 câu hỏi
+    if (questions.length === 5) {
+        const loadingDiv = suggestedDiv.querySelector('.loading-questions');
+        if (loadingDiv) {
+            loadingDiv.remove();
+        }
+    }
+
+    // Tạo và thêm từng button với animation
+    questions.forEach((question, index) => {
+        // Kiểm tra nếu câu hỏi đã tồn tại
+        const existingButtons = suggestedDiv.querySelectorAll('.suggested-button');
+        const questionExists = Array.from(existingButtons).some(btn => btn.textContent === question);
+        
+        if (!questionExists) {
+            const button = document.createElement('button');
+            button.className = 'suggested-button';
+            button.textContent = question;
+            button.onclick = () => {
+                document.getElementById('user-input').value = question;
+                document.getElementById('user-input').focus();
+            };
+            
+            // Set initial state cho animation
+            button.style.opacity = '0';
+            button.style.transform = 'translateY(10px)';
+            suggestedDiv.appendChild(button);
+
+            // Trigger animation với delay tăng dần
+            setTimeout(() => {
+                button.style.transition = 'all 0.3s ease';
+                button.style.opacity = '1';
+                button.style.transform = 'translateY(0)';
+                // Scroll đến button mới
+                button.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100 * index);
+        }
+    });
+
+    return suggestedDiv;
+}
+
+async function generateSuggestedQuestions(question, answer) {
+    try {
+        // Tìm container của tin nhắn bot cuối cùng
+        const messageContainer = document.querySelector('.bot-message:last-child');
+        if (!messageContainer) return [];
+
+        // Tạo container với loading indicator ngay từ đầu
+        let suggestedDiv = createSuggestedButtons([], messageContainer);
+
+        // Hàm helper để gửi request và xử lý response
+        async function makeRequest(prompt, isRetry = false) {
+            const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                mode: 'cors',
+                body: JSON.stringify({
+                    model: currentModel,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: prompt
+                        },
+                        {
+                            role: 'user',
+                            content: isRetry ? 
+                                `Chủ đề: ${question}\nPhân tích: ${answer}\n\nTạo 5 câu hỏi theo format yêu cầu.` :
+                                `Dựa vào cuộc hội thoại sau:\nCâu hỏi: ${question}\nCâu trả lời: ${answer}\n\nHãy tạo 5 câu hỏi tiếp theo phù hợp cho người dùng.`
+                        }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 500,
+                    stream: true
+                })
             });
 
-            container.appendChild(suggestedDiv);
+            if (!response.ok) {
+                throw new Error(isRetry ? 'Retry API error: ' : 'API error: ' + response.status);
+            }
+
+            // Xử lý response stream và cập nhật UI
+            const tempDiv = document.createElement('div');
+            const suggestions = await processStreamResponse(response.body.getReader(), tempDiv);
+            const parsedQuestions = parseQuestions(suggestions);
+
+            // Cập nhật UI với các câu hỏi mới
+            if (parsedQuestions.length > 0) {
+                createSuggestedButtons(parsedQuestions, messageContainer);
+            }
+
+            return parsedQuestions;
         }
 
-        async function generateSuggestedQuestions(question, answer) {
-            try {
-                const response = await fetch(`${currentEndpoint}/v1/chat/completions`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    mode: 'cors',
-                    body: JSON.stringify({
-                        model: currentModel,
-                        messages: [
-                            {
-                                role: 'system',
-                                content: `Bạn là một trợ lý y tế. Hãy tạo câu hỏi theo các nguyên tắc sau:
+        // Prompt cho lần thử đầu tiên
+        const initialPrompt = `Bạn là một trợ lý y tế. Hãy tạo câu hỏi theo các nguyên tắc sau:
 - Tạo CHÍNH XÁC 5 câu hỏi đơn giản và ngắn gọn (dưới 15 từ)
 - KHÔNG sử dụng format trắc nghiệm hay các lựa chọn A,B,C,D
 - Câu hỏi phải thực tế và hữu ích với người bệnh
 - Tập trung vào: triệu chứng, cách điều trị, phòng ngừa, khi nào cần khám
 - Trả lời dưới dạng danh sách đánh số từ 1-5, mỗi câu một dòng riêng biệt
-- Chỉ viết câu hỏi, không thêm bất kỳ nội dung nào khác`
-                            },
-                            {
-                                role: 'user',
-                                content: `Dựa vào cuộc hội thoại sau:
-Câu hỏi: ${question}
-Câu trả lời: ${answer}
+- Chỉ viết câu hỏi, không thêm bất kỳ nội dung nào khác`;
 
-Hãy tạo 5 câu hỏi tiếp theo phù hợp cho người dùng.`
-                            }
-                        ],
-                        temperature: 0.7,
-                        max_tokens: 500,
-                        stream: true
-                    })
-                });
+        // Thử lần đầu
+        let questions = await makeRequest(initialPrompt);
 
-                if (!response.ok) throw new Error('API error: ' + response.status);
-
-                const tempDiv = document.createElement('div');
-                const suggestions = await processStreamResponse(response.body.getReader(), tempDiv);
-                const parsedQuestions = parseQuestions(suggestions);
-
-                if (parsedQuestions.length === 5) {
-                    return parsedQuestions;
-                } else {
-                    // Retry with more structured prompt
-                    const retryResponse = await fetch(`${currentEndpoint}/v1/chat/completions`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'ngrok-skip-browser-warning': 'true'
-                        },
-                        mode: 'cors',
-                        body: JSON.stringify({
-                            model: currentModel,
-                            messages: [
-                                {
-                                    role: 'system',
-                                    content: `Bạn là trợ lý y tế. Trả lời chính xác theo format sau:
+        // Nếu không đủ 5 câu, thử lại với prompt cụ thể hơn
+        if (questions.length < 5) {
+            const retryPrompt = `Bạn là trợ lý y tế. Trả lời chính xác theo format sau:
 1. [câu hỏi về triệu chứng]
 2. [câu hỏi về cách điều trị]
 3. [câu hỏi về cách phòng ngừa]
@@ -600,29 +670,35 @@ Hãy tạo 5 câu hỏi tiếp theo phù hợp cho người dùng.`
 5. [câu hỏi về chế độ sinh hoạt]
 
 Mỗi câu phải xuống dòng riêng biệt.
-Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng trắc nghiệm.`
-                                },
-                                {
-                                    role: 'user',
-                                    content: `Chủ đề: ${question}\nPhân tích: ${answer}\n\nTạo 5 câu hỏi theo format yêu cầu.`
-                                }
-                            ],
-                            temperature: 0.7,
-                            max_tokens: 500,
-                            stream: true
-                        })
-                    });
+Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng trắc nghiệm.`;
 
-                    if (!retryResponse.ok) throw new Error('Retry API error: ' + retryResponse.status);
-
-                    const retrySuggestions = await processStreamResponse(retryResponse.body.getReader(), tempDiv);
-                    return parseQuestions(retrySuggestions);
-                }
-            } catch (error) {
-                console.error('Error generating suggestions:', error);
-                return [];
-            }
+            questions = await makeRequest(retryPrompt, true);
         }
+
+        return questions;
+
+    } catch (error) {
+        console.error('Error generating suggestions:', error);
+        
+        // Hiển thị thông báo lỗi trong UI
+        const messageContainer = document.querySelector('.bot-message:last-child');
+        if (messageContainer) {
+            // Xóa loading indicator nếu có
+            const loadingDiv = messageContainer.querySelector('.loading-questions');
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+
+            // Thêm thông báo lỗi
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'suggestion-error';
+            errorDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Không thể tạo câu hỏi gợi ý. Vui lòng thử lại sau.';
+            messageContainer.appendChild(errorDiv);
+        }
+        
+        return [];
+    }
+}
 
         // Modify existing functions to integrate suggested questions
         function createMessageElement(isUser, text, messageId) {
@@ -755,52 +831,81 @@ Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng tr�
         }
 
         // Handle message stream processing
-        async function processStreamResponse(reader, botMessageContent) {
-            let botReply = '';
-            const decoder = new TextDecoder();
-            let buffer = '';
+        async function processStreamResponse(reader, botMessageContent, isGeneratingSuggestions = false) {
+    let fullResponse = '';
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let currentQuestions = [];
 
-            try {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop() || '';
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
 
-                    for (const line of lines) {
-                        const trimmedLine = line.trim();
+            for (const line of lines) {
+                if (line.trim() && line.startsWith('data: ')) {
+                    try {
+                        const jsonStr = line.replace('data: ', '');
+                        if (jsonStr === '[DONE]') continue;
                         
-                        if (!trimmedLine || trimmedLine === 'data: [DONE]') continue;
-                        
-                        if (trimmedLine.startsWith('data: ')) {
-                            try {
-                                const jsonStr = trimmedLine.replace('data: ', '');
-                                if (!jsonStr.trim()) continue;
-                                
-                                const json = JSON.parse(jsonStr);
-                                const token = json?.choices?.[0]?.delta?.content;
-                                
-                                if (token) {
-                                    botReply += token;
-                                    botMessageContent.textContent = botReply;
-                                    scrollToBottom();
+                        const json = JSON.parse(jsonStr);
+                        const token = json?.choices?.[0]?.delta?.content || '';
+                        fullResponse += token;
+
+                        // Nếu đang tạo câu hỏi gợi ý, không cập nhật vào botMessageContent
+                        if (!isGeneratingSuggestions) {
+                            botMessageContent.textContent = fullResponse;
+                        }
+
+                        // Xử lý câu hỏi gợi ý nếu cần
+                        if (isGeneratingSuggestions && token.includes('\n')) {
+                            const newQuestions = parseQuestions(fullResponse);
+                            const newlyAddedQuestions = newQuestions.filter(
+                                q => !currentQuestions.includes(q)
+                            );
+
+                            if (newlyAddedQuestions.length > 0) {
+                                const messageContainer = botMessageContent.closest('.message-container');
+                                if (messageContainer) {
+                                    createSuggestedButtons(newlyAddedQuestions, messageContainer);
+                                    currentQuestions = newQuestions;
                                 }
-                            } catch (e) {
-                                console.debug('Parse error for line:', trimmedLine, e);
                             }
                         }
+
+                        scrollToBottom();
+                    } catch (e) {
+                        console.debug('Parse error for line:', line, e);
                     }
                 }
-            } catch (error) {
-                console.error('Stream processing error:', error);
-                botMessageContent.textContent = 'Có lỗi xảy ra trong quá trình xử lý. Vui lòng thử lại.';
-                throw error;
             }
-
-            return botReply;
         }
+
+        // Xử lý buffer còn lại
+        if (buffer && isGeneratingSuggestions) {
+            const lastQuestions = parseQuestions(buffer);
+            if (lastQuestions.length > 0) {
+                const messageContainer = botMessageContent.closest('.message-container');
+                if (messageContainer) {
+                    createSuggestedButtons(lastQuestions, messageContainer);
+                }
+            }
+        }
+
+    } catch (error) {
+        console.error('Stream processing error:', error);
+        if (!isGeneratingSuggestions) {
+            botMessageContent.textContent += '\nError: ' + error.message;
+        }
+        throw error;
+    }
+
+    return fullResponse;
+}
 
         function scrollToBottom() {
             const chatMessages = document.getElementById('chat-messages');
@@ -888,13 +993,25 @@ Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng tr�
             
             if (chatHistory.length === 0) {
                 const welcomeMessageId = Date.now().toString();
-                const messageElement = createMessageElement(false, WELCOME_MESSAGE, welcomeMessageId);
+                const initialMessage = `Xin chào! Tôi là chatbot của Friend Medical Clinic. 😊
+Tôi có thể giúp bạn:
+• Tư vấn về các vấn đề sức khỏe
+• Cung cấp thông tin về dịch vụ phòng khám
+• Hướng dẫn đặt lịch khám
+⚠️ Lưu ý quan trọng:
+• Bạn có tối đa ${MAX_MESSAGES} tin nhắn trong một cuộc trò chuyện
+• Thông tin tôi cung cấp chỉ mang tính tham khảo
+• Vui lòng tham khảo ý kiến bác sĩ để có hướng dẫn chính xác nhất
+• Trong trường hợp khẩn cấp, hãy gọi ngay cho phòng khám: 028 3535 5353
+Bạn có thể đặt câu hỏi ngay bây giờ. Tôi sẽ cố gắng hỗ trợ bạn tốt nhất! 🌟`;
+
+                const messageElement = createMessageElement(false, initialMessage, welcomeMessageId);
                 container.appendChild(messageElement);
                 
                 chatHistory.push({
                     id: welcomeMessageId,
                     role: 'assistant',
-                    content: WELCOME_MESSAGE
+                    content: initialMessage
                 });
                 localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
             } else {
