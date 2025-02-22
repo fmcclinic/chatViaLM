@@ -664,11 +664,11 @@ async function generateSuggestedQuestions(question, answer) {
         if (questions.length < 5) {
             const retryPrompt = `Bạn là trợ lý y tế. Trả lời chính xác theo format sau:
 1. [câu hỏi về triệu chứng, phân độ nặng]
-2. [câu hỏi về cách điều trị]
+2. [câu hỏi về cách nguyên nhân, điều trị]
 3. [câu hỏi về cách phòng ngừa] 
 4. [câu hỏi về thời điểm cần khám]
 5. [câu hỏi về chế độ sinh hoạt]
-6. [câu hỏi về phân độ nặng]
+
 
 Mỗi câu phải xuống dòng riêng biệt.
 Mỗi câu hỏi phải ngắn gọn dưới 15 từ và không dùng dạng trắc nghiệm.`;
